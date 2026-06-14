@@ -1,0 +1,136 @@
+import type { ComponentType } from "react";
+import { Activity, Archive, Boxes, CalendarClock, PackageCheck, PackageOpen, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { createClient } from "@/lib/supabase/server";
+import { formatDateTime } from "@/lib/utils";
+
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const in30Days = new Date();
+  in30Days.setDate(in30Days.getDate() + 30);
+
+  const [totalBoxes, active, empty, partial, taken, stock, expired, todayMovements, latest] = await Promise.all([
+    supabase.from("boxes").select("id", { count: "exact", head: true }),
+    supabase.from("boxes").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("boxes").select("id", { count: "exact", head: true }).eq("status", "empty"),
+    supabase.from("boxes").select("id", { count: "exact", head: true }).eq("status", "partial"),
+    supabase.from("boxes").select("id", { count: "exact", head: true }).eq("status", "taken"),
+    supabase.from("v_active_stock").select("qty_available"),
+    supabase.from("boxes").select("id", { count: "exact", head: true }).in("status", ["active", "partial"]).lte("expired_at", in30Days.toISOString().slice(0, 10)),
+    supabase.from("stock_movements").select("id", { count: "exact", head: true }).gte("created_at", today.toISOString()),
+    supabase
+      .from("stock_movements")
+      .select("movement_type, qty, created_at, boxes(id_box, box_name), products(sku, product_name)")
+      .order("created_at", { ascending: false })
+      .limit(8)
+  ]);
+
+  const totalStock = (stock.data ?? []).reduce((sum, row) => sum + Number(row.qty_available ?? 0), 0);
+  const latestRows = (latest.data ?? []) as unknown as LatestMovement[];
+
+  return (
+    <div className="space-y-6">
+      <div className="animate-rise surface-panel flex flex-col gap-4 rounded-lg border p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase text-primary">Gudang Atomy</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-normal">Dashboard</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Ringkasan stok, box, dan aktivitas terbaru.</p>
+        </div>
+        <div className="flex items-center gap-3 rounded-md border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
+          <TrendingUp className="h-4 w-4 text-primary" />
+          <span>{todayMovements.count ?? 0} transaksi hari ini</span>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <Metric title="Total box terdata" value={totalBoxes.count ?? 0} icon={Boxes} tone="primary" />
+        <Metric title="Total box aktif" value={active.count ?? 0} icon={PackageCheck} tone="success" />
+        <Metric title="Total box kosong" value={empty.count ?? 0} icon={Archive} tone="muted" />
+        <Metric title="Total box partial" value={partial.count ?? 0} icon={PackageOpen} tone="warning" />
+        <Metric title="Total box taken" value={taken.count ?? 0} icon={Boxes} tone="muted" />
+        <Metric title="Total stok tersedia" value={totalStock} icon={Archive} tone="success" />
+        <Metric title="Expired 30 hari" value={expired.count ?? 0} icon={CalendarClock} tone="warning" />
+        <Metric title="Transaksi hari ini" value={todayMovements.count ?? 0} icon={Activity} tone="primary" />
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Aktivitas Terbaru</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {latestRows.length ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Waktu</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Box</TableHead>
+                  <TableHead>Produk</TableHead>
+                  <TableHead>Qty</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {latestRows.map((movement, index) => (
+                  <TableRow key={`${movement.created_at}-${index}`}>
+                    <TableCell>{formatDateTime(movement.created_at)}</TableCell>
+                    <TableCell>{movement.movement_type}</TableCell>
+                    <TableCell>{movement.boxes?.id_box ?? "-"}</TableCell>
+                    <TableCell>{movement.products?.product_name ?? "-"}</TableCell>
+                    <TableCell>{movement.qty}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <EmptyState title="Belum ada aktivitas" description="Aktivitas barang masuk dan keluar akan muncul di sini." />
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+type LatestMovement = {
+  movement_type: string;
+  qty: number;
+  created_at: string;
+  boxes: { id_box: string; box_name: string } | null;
+  products: { sku: string | null; product_name: string } | null;
+};
+
+function Metric({
+  title,
+  value,
+  icon: Icon,
+  tone
+}: {
+  title: string;
+  value: number;
+  icon: ComponentType<{ className?: string }>;
+  tone: "primary" | "success" | "warning" | "muted";
+}) {
+  const toneClass = {
+    primary: "bg-primary/10 text-primary ring-primary/15",
+    success: "bg-success/10 text-success ring-success/15",
+    warning: "bg-warning/14 text-warning-foreground ring-warning/25",
+    muted: "bg-secondary text-muted-foreground ring-border"
+  }[tone];
+
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="flex items-center justify-between p-5">
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="mt-2 text-3xl font-semibold">{value}</p>
+        </div>
+        <div className={`rounded-md p-3 ring-1 ${toneClass}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

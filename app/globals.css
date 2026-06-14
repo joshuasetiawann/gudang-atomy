@@ -1,0 +1,199 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 24% 97%;
+  --foreground: 222 32% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 30% 12%;
+  --primary: 174 70% 27%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 24% 92%;
+  --secondary-foreground: 222 30% 16%;
+  --muted: 210 24% 93%;
+  --muted-foreground: 215 14% 42%;
+  --accent: 39 92% 50%;
+  --accent-foreground: 30 38% 12%;
+  --destructive: 0 74% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 145 61% 34%;
+  --success-foreground: 0 0% 100%;
+  --warning: 34 96% 47%;
+  --warning-foreground: 30 45% 12%;
+  --border: 214 20% 84%;
+  --input: 214 20% 84%;
+  --ring: 174 72% 28%;
+  --surface: 210 30% 99%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+  background:
+    linear-gradient(180deg, hsl(210 28% 99%) 0%, hsl(var(--background)) 42%, hsl(178 18% 95%) 100%);
+  color: hsl(var(--foreground));
+  font-feature-settings: "rlig" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+select {
+  color: hsl(var(--foreground));
+}
+
+::selection {
+  background: hsl(var(--primary) / 0.18);
+}
+
+.app-page {
+  animation: page-in 220ms ease-out;
+}
+
+.animate-enter {
+  animation: page-in 240ms ease-out both;
+}
+
+.animate-rise {
+  animation: rise-in 300ms ease-out both;
+}
+
+.surface-panel {
+  background:
+    linear-gradient(180deg, hsl(var(--card) / 0.96), hsl(var(--card) / 0.9)),
+    hsl(var(--surface));
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 16px 40px rgb(15 23 42 / 0.07);
+}
+
+.interactive-lift {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.interactive-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 20px 46px rgb(15 23 42 / 0.1);
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+
+.skeleton-shimmer::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, hsl(var(--card) / 0.78), transparent);
+  animation: skeleton-shimmer 1.35s ease-in-out infinite;
+}
+
+.print-label-sheet {
+  align-items: start;
+}
+
+.print-label-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .interactive-lift:hover {
+    transform: none;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+
+  body {
+    background: white;
+  }
+
+  .dashboard-shell-content {
+    padding-left: 0 !important;
+  }
+
+  #main-content {
+    max-width: none !important;
+    min-height: auto !important;
+    padding: 0 !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page {
+    margin: 0;
+    box-shadow: none !important;
+  }
+
+  .print-label-sheet {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6mm !important;
+  }
+
+  .print-label-card {
+    min-height: 132mm;
+    border-color: #111827 !important;
+    box-shadow: none !important;
+  }
+}

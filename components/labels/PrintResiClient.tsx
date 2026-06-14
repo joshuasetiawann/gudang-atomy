@@ -142,15 +142,15 @@ export function PrintResiClient({
             <select
               value={status}
               onChange={(event) => setStatus(event.target.value)}
-              className="h-10 w-full rounded-md border bg-card px-3 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-ring"
+              className="h-10 w-full rounded-md border bg-card px-3 text-sm shadow-soft outline-none transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-ring"
             >
               <option value="ready">Siap ditempel</option>
               <option value="all">Semua status</option>
-              <option value="active">Active</option>
-              <option value="partial">Partial</option>
-              <option value="empty">Empty</option>
-              <option value="taken">Taken</option>
-              <option value="void">Void</option>
+              <option value="active">Aktif</option>
+              <option value="partial">Sebagian</option>
+              <option value="empty">Kosong</option>
+              <option value="taken">Diambil</option>
+              <option value="void">Batal</option>
             </select>
           </label>
           <label className="space-y-2">
@@ -158,7 +158,7 @@ export function PrintResiClient({
             <select
               value={productId}
               onChange={(event) => setProductId(event.target.value)}
-              className="h-10 w-full rounded-md border bg-card px-3 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-ring"
+              className="h-10 w-full rounded-md border bg-card px-3 text-sm shadow-soft outline-none transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-ring"
             >
               <option value="">Semua pesanan</option>
               {productOptions.map((option) => (
@@ -183,12 +183,32 @@ export function PrintResiClient({
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-2 rounded-md border bg-background/70 px-3 py-2">
+          <span className="inline-flex items-center gap-2 rounded-md border bg-background/70 px-3 py-2 shadow-soft">
             <Filter className="h-4 w-4 text-primary" />
-            {filteredLabels.length} label terfilter dari {labels.length} box
+            <span>
+              <span className="font-mono font-semibold tabular-nums text-foreground">{filteredLabels.length}</span> label terfilter dari{" "}
+              <span className="font-mono tabular-nums text-foreground">{labels.length}</span> box
+            </span>
           </span>
-          <span className={cn("rounded-md border bg-background/70 px-3 py-2", canPrint && "text-success")}>
-            {filteredLabels.length === 0 ? "Tidak ada label siap print" : `QR siap ${readyCount}/${filteredLabels.length}`}
+          <span
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md border bg-background/70 px-3 py-2 shadow-soft transition-colors duration-200",
+              canPrint && "border-success/30 bg-success/10 text-success"
+            )}
+          >
+            {isPreparing ? (
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-warning" />
+            ) : canPrint ? (
+              <span className="h-1.5 w-1.5 rounded-full bg-success" />
+            ) : null}
+            {filteredLabels.length === 0 ? (
+              "Tidak ada label siap print"
+            ) : (
+              <span>
+                QR siap <span className="font-mono tabular-nums">{readyCount}</span>/
+                <span className="font-mono tabular-nums">{filteredLabels.length}</span>
+              </span>
+            )}
           </span>
         </div>
       </div>
@@ -213,7 +233,7 @@ function ResiLabelCard({ label, qrUrl }: { label: PrintResiLabel; qrUrl?: string
   const hiddenItemCount = Math.max(label.items.length - visibleItems.length, 0);
 
   return (
-    <article className="print-label-card rounded-lg border bg-white p-5 text-slate-950 shadow-soft">
+    <article className="print-label-card rounded-lg border bg-white p-5 text-slate-950 shadow-soft transition-all duration-200 hover:shadow-lift">
       <div className="relative">
         <h2 className="text-center text-xl font-bold tracking-normal">Gudang Atomy</h2>
         <div className="no-print absolute right-0 top-0">
@@ -223,26 +243,30 @@ function ResiLabelCard({ label, qrUrl }: { label: PrintResiLabel; qrUrl?: string
 
       <div className="mt-4 grid gap-2 text-sm">
         <Row label="Label Client" value={label.box_name} />
-        <Row label="ID Box App" value={label.id_box} />
+        <Row label="ID Box App" value={label.id_box} mono />
         <Row label="Pemilik" value={label.owner_name ?? "-"} />
-        <Row label="Pemilik ID Box" value={label.pemilik_id_box} />
-        <Row label="Expired" value={formatDate(label.expired_at)} />
-        <Row label="Lokasi" value={label.location_code ?? "-"} />
+        <Row label="Pemilik ID Box" value={label.pemilik_id_box} mono />
+        <Row label="Expired" value={formatDate(label.expired_at)} mono />
+        <Row label="Lokasi" value={label.location_code ?? "-"} mono />
       </div>
 
       <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2 text-xs">
-        <p className="font-bold">Isi Box</p>
+        <p className="font-bold uppercase tracking-wide text-slate-600">Isi box</p>
         {visibleItems.length ? (
-          <div className="mt-1 space-y-1">
+          <div className="mt-1.5 space-y-1">
             {visibleItems.map((item) => (
               <div key={`${item.product_id}-${item.sku ?? ""}`} className="grid grid-cols-[1fr_auto] gap-2">
                 <span className="break-words">{item.product_name}</span>
-                <span className="font-semibold">
+                <span className="font-semibold tabular-nums">
                   {item.qty_available} {item.unit ?? "pcs"}
                 </span>
               </div>
             ))}
-            {hiddenItemCount ? <p className="text-slate-500">+{hiddenItemCount} produk lain</p> : null}
+            {hiddenItemCount ? (
+              <p className="text-slate-500">
+                +<span className="tabular-nums">{hiddenItemCount}</span> produk lain
+              </p>
+            ) : null}
           </div>
         ) : (
           <p className="mt-1 text-slate-500">-</p>
@@ -251,18 +275,22 @@ function ResiLabelCard({ label, qrUrl }: { label: PrintResiLabel; qrUrl?: string
 
       <div className="mt-4 flex justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {qrUrl ? <img src={qrUrl} alt={label.barcode_value} className="h-44 w-44" /> : <div className="skeleton-shimmer h-44 w-44 rounded-md" />}
+        {qrUrl ? (
+          <img src={qrUrl} alt={label.barcode_value} className="h-44 w-44 rounded-sm" />
+        ) : (
+          <div className="skeleton-shimmer h-44 w-44 rounded-md" />
+        )}
       </div>
-      <p className="mt-2 break-all text-center font-mono text-[11px]">{label.barcode_value}</p>
+      <p className="mt-2 break-all text-center font-mono text-[11px] tracking-tight">{label.barcode_value}</p>
     </article>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="grid grid-cols-[104px_1fr] gap-2">
       <span className="font-bold">{label}</span>
-      <span className="break-words">{value}</span>
+      <span className={cn("break-words", mono && "font-mono text-[13px] tracking-tight")}>{value}</span>
     </div>
   );
 }

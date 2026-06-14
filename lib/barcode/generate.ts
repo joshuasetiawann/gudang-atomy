@@ -18,8 +18,11 @@ export function buildBarcodeValue(idBox: string) {
   return `ATMY_BOX:${idBox}:${checksum(idBox)}`;
 }
 
+// id_box may be a generated code (BOX-YYYYMMDD-NNNNNN) or an imported code
+// (e.g. GK-KARDUS-000001). Accept any uppercase alphanumeric/hyphen id and rely
+// on the checksum to guarantee integrity, instead of hardcoding one id shape.
 export function isValidBarcodeValue(value: string) {
-  const match = /^ATMY_BOX:(BOX-\d{8}-\d{6}):([A-Z0-9]{4})$/.exec(value.trim());
+  const match = /^ATMY_BOX:([A-Z0-9][A-Z0-9-]{1,48}):([A-Z0-9]{4})$/.exec(value.trim());
   if (!match) return false;
   return checksum(match[1]) === match[2] || legacyChecksum(match[1]) === match[2];
 }

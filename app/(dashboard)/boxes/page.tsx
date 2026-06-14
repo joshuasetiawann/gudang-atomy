@@ -21,7 +21,11 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
     .order("created_at", { ascending: false })
     .limit(1000);
   if (search) query = query.or(`id_box.ilike.%${search}%,box_name.ilike.%${search}%`);
-  if (params.status) query = query.eq("status", params.status);
+  if (params.status && params.status !== "__all") {
+    query = query.eq("status", params.status);
+  } else if (params.status !== "__all") {
+    query = query.gt("total_product_types", 0);
+  }
   if (params.owner) query = query.ilike("owner_name", `%${params.owner}%`);
   if (params.location) query = query.ilike("location_code", `%${params.location}%`);
   const { data } = await query;
@@ -63,7 +67,8 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
                 defaultValue={params.status ?? ""}
                 className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <option value="">Semua status</option>
+                <option value="">Box berisi produk</option>
+                <option value="__all">Semua status</option>
                 <option value="active">active</option>
                 <option value="partial">partial</option>
                 <option value="empty">empty</option>

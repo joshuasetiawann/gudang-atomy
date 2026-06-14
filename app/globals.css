@@ -3,28 +3,28 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 24% 97%;
-  --foreground: 222 32% 11%;
+  --background: 200 30% 97%;
+  --foreground: 200 30% 12%;
   --card: 0 0% 100%;
-  --card-foreground: 222 30% 12%;
-  --primary: 174 70% 27%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 210 24% 92%;
-  --secondary-foreground: 222 30% 16%;
-  --muted: 210 24% 93%;
-  --muted-foreground: 215 14% 42%;
-  --accent: 39 92% 50%;
-  --accent-foreground: 30 38% 12%;
-  --destructive: 0 74% 48%;
+  --card-foreground: 200 28% 13%;
+  --primary: 177 64% 28%;
+  --primary-foreground: 180 40% 98%;
+  --secondary: 198 28% 93%;
+  --secondary-foreground: 200 28% 18%;
+  --muted: 200 26% 94%;
+  --muted-foreground: 200 14% 42%;
+  --accent: 38 78% 52%;
+  --accent-foreground: 30 40% 14%;
+  --destructive: 358 64% 48%;
   --destructive-foreground: 0 0% 100%;
-  --success: 145 61% 34%;
+  --success: 162 54% 33%;
   --success-foreground: 0 0% 100%;
-  --warning: 34 96% 47%;
-  --warning-foreground: 30 45% 12%;
-  --border: 214 20% 84%;
-  --input: 214 20% 84%;
-  --ring: 174 72% 28%;
-  --surface: 210 30% 99%;
+  --warning: 36 76% 48%;
+  --warning-foreground: 30 45% 14%;
+  --border: 200 22% 86%;
+  --input: 200 22% 86%;
+  --ring: 177 66% 30%;
+  --surface: 195 36% 99%;
 }
 
 * {
@@ -38,10 +38,20 @@ html {
 body {
   min-height: 100%;
   background:
-    linear-gradient(180deg, hsl(210 28% 99%) 0%, hsl(var(--background)) 42%, hsl(178 18% 95%) 100%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E"),
+    radial-gradient(900px 520px at 8% -8%, hsl(177 60% 42% / 0.07), transparent 60%),
+    radial-gradient(820px 480px at 100% 0%, hsl(38 78% 55% / 0.05), transparent 58%),
+    radial-gradient(1100px 700px at 50% 120%, hsl(190 50% 50% / 0.05), transparent 60%),
+    linear-gradient(180deg, hsl(195 36% 99%) 0%, hsl(var(--background)) 46%, hsl(190 24% 96%) 100%);
+  background-repeat: repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size: 220px 220px, auto, auto, auto, auto;
+  background-attachment: fixed, fixed, fixed, fixed, fixed;
   color: hsl(var(--foreground));
+  font-family: var(--font-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   font-feature-settings: "rlig" 1, "calt" 1;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
@@ -53,6 +63,10 @@ textarea {
 
 select {
   color: hsl(var(--foreground));
+}
+
+table {
+  font-variant-numeric: tabular-nums;
 }
 
 ::selection {
@@ -73,18 +87,23 @@ select {
 
 .surface-panel {
   background:
-    linear-gradient(180deg, hsl(var(--card) / 0.96), hsl(var(--card) / 0.9)),
+    linear-gradient(180deg, hsl(var(--card) / 0.97), hsl(var(--card) / 0.92)),
+    radial-gradient(120% 80% at 50% 0%, hsl(177 50% 50% / 0.04), transparent 60%),
     hsl(var(--surface));
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05), 0 16px 40px rgb(15 23 42 / 0.07);
+  box-shadow: 0 1px 2px rgb(30 58 64 / 0.05), 0 12px 32px rgb(30 58 64 / 0.07), 0 2px 8px rgb(20 64 70 / 0.04);
 }
 
 .interactive-lift {
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease;
 }
 
 .interactive-lift:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 20px 46px rgb(15 23 42 / 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgb(30 58 64 / 0.06), 0 24px 48px rgb(30 58 64 / 0.12), 0 4px 12px rgb(20 64 70 / 0.06);
+}
+
+.interactive-lift:active {
+  transform: translateY(0);
 }
 
 .skeleton-shimmer {

@@ -12,13 +12,13 @@ export const ToastViewport = (props: ToastPrimitive.ToastViewportProps) => (
 );
 
 export function Toast({ className, ...props }: ToastPrimitive.ToastProps) {
-  return <ToastPrimitive.Root className={cn("rounded-md border bg-card p-4 text-sm shadow-soft", className)} {...props} />;
+  return <ToastPrimitive.Root className={cn("rounded-lg border bg-card p-4 text-sm shadow-lift animate-rise", className)} {...props} />;
 }
 
 export function ToastTitle({ className, ...props }: ToastPrimitive.ToastTitleProps) {
-  return <ToastPrimitive.Title className={cn("font-medium", className)} {...props} />;
+  return <ToastPrimitive.Title className={cn("font-semibold tracking-tight", className)} {...props} />;
 }
 
 export function ToastDescription({ className, ...props }: ToastPrimitive.ToastDescriptionProps) {
-  return <ToastPrimitive.Description className={cn("mt-1 text-muted-foreground", className)} {...props} />;
+  return <ToastPrimitive.Description className={cn("mt-1 text-sm leading-relaxed text-muted-foreground", className)} {...props} />;
 }

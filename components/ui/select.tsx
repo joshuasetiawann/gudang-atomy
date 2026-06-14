@@ -12,7 +12,7 @@ export function SelectTrigger({ className, children, ...props }: SelectPrimitive
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        "flex h-10 w-full items-center justify-between rounded-md border border-input bg-card px-3 py-2 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-10 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-2 text-sm shadow-soft outline-none transition-all duration-200 hover:border-primary/40 focus:border-primary/60 focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 data-[placeholder]:text-muted-foreground [&>span]:truncate",
         className
       )}
       {...props}
@@ -29,7 +29,7 @@ export function SelectContent({ className, children, ...props }: SelectPrimitive
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
-        className={cn("z-50 min-w-[8rem] overflow-hidden rounded-md border bg-card shadow-soft animate-enter", className)}
+        className={cn("z-50 min-w-[8rem] overflow-hidden rounded-lg border bg-card shadow-lift animate-rise", className)}
         {...props}
       >
         <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
@@ -42,7 +42,7 @@ export function SelectItem({ className, children, ...props }: SelectPrimitive.Se
   return (
     <SelectPrimitive.Item
       className={cn(
-        "relative flex cursor-default select-none items-center rounded-sm py-2 pl-8 pr-2 text-sm outline-none transition-colors data-[highlighted]:bg-muted",
+        "relative flex cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-2 text-sm outline-none transition-colors data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary",
         className
       )}
       {...props}

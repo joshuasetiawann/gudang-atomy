@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Plus, Save, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Plus, Save, Trash2 } from "lucide-react";
 import {
   createOwnerAction,
   createAdminUserAction,
@@ -27,7 +27,7 @@ export function OwnerManager({ owners, canEdit }: { owners: Owner[]; canEdit: bo
   const [state, formAction, pending] = useActionState(createOwnerAction, initialState);
 
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-5">
       {canEdit ? (
         <Card>
           <CardHeader>
@@ -36,13 +36,13 @@ export function OwnerManager({ owners, canEdit }: { owners: Owner[]; canEdit: bo
           </CardHeader>
           <CardContent>
             <form action={formAction} className="grid gap-3 md:grid-cols-2">
-              <Input name="owner_code" placeholder="OWN-000001, kosongkan untuk otomatis" />
+              <Input name="owner_code" placeholder="OWN-000001, kosongkan untuk otomatis" className="font-mono" />
               <Input name="owner_name" placeholder="Nama pemilik" required />
-              <Input name="phone" placeholder="Nomor HP" />
-              <Input name="atomy_member_id" placeholder="Atomy member ID" />
+              <Input name="phone" placeholder="Nomor HP" className="font-mono" />
+              <Input name="atomy_member_id" placeholder="Atomy member ID" className="font-mono" />
               <Textarea name="notes" placeholder="Catatan" className="md:col-span-2" />
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="is_active" defaultChecked />
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input type="checkbox" name="is_active" defaultChecked className="h-4 w-4 rounded-sm border-input text-primary accent-primary focus-visible:ring-2 focus-visible:ring-ring" />
                 Aktif
               </label>
               <SubmitMessage state={state} />
@@ -69,7 +69,7 @@ function OwnerRow({ owner, canEdit }: { owner: Owner; canEdit: boolean }) {
       <Card>
         <CardContent className="p-4">
           <p className="font-medium">{owner.owner_name}</p>
-          <p className="text-sm text-muted-foreground">{owner.owner_code}</p>
+          <p className="font-mono text-sm text-muted-foreground">{owner.owner_code}</p>
         </CardContent>
       </Card>
     );
@@ -77,15 +77,15 @@ function OwnerRow({ owner, canEdit }: { owner: Owner; canEdit: boolean }) {
   return (
     <Card>
       <CardContent className="p-4">
-        <form action={formAction} className="grid gap-3 md:grid-cols-[140px_minmax(180px,1fr)_150px_170px_minmax(180px,1fr)_80px_auto]">
+        <form action={formAction} className="grid items-center gap-3 md:grid-cols-[140px_minmax(180px,1fr)_150px_170px_minmax(180px,1fr)_80px_auto]">
           <input type="hidden" name="id" value={owner.id} />
-          <Input name="owner_code" defaultValue={owner.owner_code} />
+          <Input name="owner_code" defaultValue={owner.owner_code} className="font-mono" />
           <Input name="owner_name" defaultValue={owner.owner_name} required />
-          <Input name="phone" defaultValue={owner.phone ?? ""} />
-          <Input name="atomy_member_id" defaultValue={owner.atomy_member_id ?? ""} />
+          <Input name="phone" defaultValue={owner.phone ?? ""} className="font-mono" />
+          <Input name="atomy_member_id" defaultValue={owner.atomy_member_id ?? ""} className="font-mono" />
           <Input name="notes" defaultValue={owner.notes ?? ""} />
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="is_active" defaultChecked={owner.is_active} />
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" name="is_active" defaultChecked={owner.is_active} className="h-4 w-4 rounded-sm border-input text-primary accent-primary focus-visible:ring-2 focus-visible:ring-ring" />
             Aktif
           </label>
           <Button disabled={pending} size="sm" variant="outline">
@@ -103,7 +103,7 @@ export function ProductManager({ products, canEdit }: { products: Product[]; can
   const [state, formAction, pending] = useActionState(createProductAction, initialState);
 
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-5">
       {canEdit ? (
         <Card>
           <CardHeader>
@@ -112,13 +112,13 @@ export function ProductManager({ products, canEdit }: { products: Product[]; can
           </CardHeader>
           <CardContent>
             <form action={formAction} className="grid gap-3 md:grid-cols-2">
-              <Input name="sku" placeholder="SKU" />
+              <Input name="sku" placeholder="SKU" className="font-mono" />
               <Input name="product_name" placeholder="Nama produk" required />
               <Input name="category" placeholder="Kategori" />
               <Input name="unit" placeholder="pcs" defaultValue="pcs" />
-              <Input name="default_barcode" placeholder="Barcode produk opsional" />
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" name="is_active" defaultChecked />
+              <Input name="default_barcode" placeholder="Barcode produk opsional" className="font-mono" />
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <input type="checkbox" name="is_active" defaultChecked className="h-4 w-4 rounded-sm border-input text-primary accent-primary focus-visible:ring-2 focus-visible:ring-ring" />
                 Aktif
               </label>
               <SubmitMessage state={state} />
@@ -145,7 +145,7 @@ function ProductRow({ product, canEdit }: { product: Product; canEdit: boolean }
       <Card>
         <CardContent className="p-4">
           <p className="font-medium">{product.product_name}</p>
-          <p className="text-sm text-muted-foreground">{product.sku ?? "-"}</p>
+          <p className="font-mono text-sm text-muted-foreground">{product.sku ?? "-"}</p>
         </CardContent>
       </Card>
     );
@@ -153,15 +153,15 @@ function ProductRow({ product, canEdit }: { product: Product; canEdit: boolean }
   return (
     <Card>
       <CardContent className="p-4">
-        <form action={formAction} className="grid gap-3 md:grid-cols-[150px_minmax(220px,1.4fr)_170px_100px_minmax(180px,1fr)_80px_auto]">
+        <form action={formAction} className="grid items-center gap-3 md:grid-cols-[150px_minmax(220px,1.4fr)_170px_100px_minmax(180px,1fr)_80px_auto]">
           <input type="hidden" name="id" value={product.id} />
-          <Input name="sku" defaultValue={product.sku ?? ""} />
+          <Input name="sku" defaultValue={product.sku ?? ""} className="font-mono" />
           <Input name="product_name" defaultValue={product.product_name} required />
           <Input name="category" defaultValue={product.category ?? ""} />
           <Input name="unit" defaultValue={product.unit ?? "pcs"} />
-          <Input name="default_barcode" defaultValue={product.default_barcode ?? ""} />
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="is_active" defaultChecked={product.is_active} />
+          <Input name="default_barcode" defaultValue={product.default_barcode ?? ""} className="font-mono" />
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" name="is_active" defaultChecked={product.is_active} className="h-4 w-4 rounded-sm border-input text-primary accent-primary focus-visible:ring-2 focus-visible:ring-ring" />
             Aktif
           </label>
           <Button disabled={pending} size="sm" variant="outline">
@@ -218,15 +218,15 @@ export function PackageBuilder({
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="package_code">Kode paket</Label>
-              <Input id="package_code" name="package_code" defaultValue={initialPackage?.package_code ?? ""} required />
+              <Input id="package_code" name="package_code" defaultValue={initialPackage?.package_code ?? ""} required className="font-mono" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="package_name">Nama paket</Label>
               <Input id="package_name" name="package_name" defaultValue={initialPackage?.package_name ?? ""} required />
             </div>
             <Textarea name="description" defaultValue={initialPackage?.description ?? ""} placeholder="Deskripsi" className="md:col-span-2" />
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="is_active" defaultChecked={initialPackage?.is_active ?? true} />
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" name="is_active" defaultChecked={initialPackage?.is_active ?? true} className="h-4 w-4 rounded-sm border-input text-primary accent-primary focus-visible:ring-2 focus-visible:ring-ring" />
               Aktif
             </label>
           </div>
@@ -234,9 +234,9 @@ export function PackageBuilder({
             {products.length ? (
               items.length ? (
                 items.map((item, index) => (
-                  <div key={index} className="grid gap-3 rounded-md border bg-background/65 p-3 md:grid-cols-[1fr_120px_40px]">
+                  <div key={index} className="grid items-center gap-3 rounded-md border bg-background/65 p-3 transition-colors hover:border-primary/30 md:grid-cols-[1fr_120px_40px]">
                     <select
-                      className="h-10 rounded-md border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      className="h-10 rounded-md border bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
                       value={item.product_id}
                       onChange={(event) => updateItem(index, { product_id: event.target.value })}
                     >
@@ -256,8 +256,9 @@ export function PackageBuilder({
                       step="1"
                       value={item.qty_per_package}
                       onChange={(event) => updateItem(index, { qty_per_package: Number(event.target.value) })}
+                      className="tabular-nums"
                     />
-                    <Button type="button" size="icon" variant="ghost" aria-label="Hapus produk" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
+                    <Button type="button" size="icon" variant="ghost" aria-label="Hapus produk" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="text-muted-foreground hover:text-destructive">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -287,7 +288,7 @@ export function PackageBuilder({
 export function AdminUsersManager({ profiles }: { profiles: Profile[] }) {
   const [state, formAction, pending] = useActionState(createAdminUserAction, initialState);
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-5">
       <Card>
         <CardHeader>
           <CardTitle>Tambah User Login</CardTitle>
@@ -295,17 +296,17 @@ export function AdminUsersManager({ profiles }: { profiles: Profile[] }) {
         <CardContent>
           <form action={formAction} className="grid gap-3 md:grid-cols-[1fr_1fr_180px_100px]">
             <Input name="full_name" placeholder="Nama lengkap" required />
-            <Input name="email" placeholder="Email login" type="email" required />
-            <select name="role" className="h-10 rounded-md border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring" defaultValue="admin_gudang">
+            <Input name="email" placeholder="Email login" type="email" required className="font-mono" />
+            <select name="role" className="h-10 rounded-md border bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring" defaultValue="admin_gudang">
               <option value="super_admin">{roleLabel("super_admin")}</option>
               <option value="admin_gudang">{roleLabel("admin_gudang")}</option>
               <option value="viewer">{roleLabel("viewer")}</option>
             </select>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="is_active" defaultChecked />
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input type="checkbox" name="is_active" defaultChecked className="h-4 w-4 rounded-sm border-input text-primary accent-primary focus-visible:ring-2 focus-visible:ring-ring" />
               Aktif
             </label>
-            <Input name="password" placeholder="Password awal" type="password" minLength={6} required className="md:col-span-2" />
+            <Input name="password" placeholder="Password awal" type="password" minLength={6} required className="md:col-span-2 font-mono" />
             <SubmitMessage state={state} />
             <Button disabled={pending} className="md:w-fit">
               <Save className="h-4 w-4" />
@@ -327,17 +328,17 @@ function ProfileRow({ profile }: { profile: Profile }) {
   return (
     <Card>
       <CardContent className="p-4">
-        <form action={formAction} className="grid gap-3 md:grid-cols-[1fr_1fr_170px_100px]">
+        <form action={formAction} className="grid items-center gap-3 md:grid-cols-[1fr_1fr_170px_100px]">
           <input type="hidden" name="id" value={profile.id} />
           <Input name="full_name" defaultValue={profile.full_name} required />
-          <Input name="email" defaultValue={profile.email ?? ""} />
-          <select name="role" className="h-10 rounded-md border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring" defaultValue={profile.role as UserRole}>
+          <Input name="email" defaultValue={profile.email ?? ""} className="font-mono" />
+          <select name="role" className="h-10 rounded-md border bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring" defaultValue={profile.role as UserRole}>
             <option value="super_admin">{roleLabel("super_admin")}</option>
             <option value="admin_gudang">{roleLabel("admin_gudang")}</option>
             <option value="viewer">{roleLabel("viewer")}</option>
           </select>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="is_active" defaultChecked={profile.is_active} />
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input type="checkbox" name="is_active" defaultChecked={profile.is_active} className="h-4 w-4 rounded-sm border-input text-primary accent-primary focus-visible:ring-2 focus-visible:ring-ring" />
             Aktif
           </label>
           <Button disabled={pending} size="sm" variant="outline" className="md:w-fit">
@@ -354,8 +355,17 @@ function ProfileRow({ profile }: { profile: Profile }) {
 function SubmitMessage({ state, compact = false, className = "" }: { state: ActionState; compact?: boolean; className?: string }) {
   if (!state.message) return null;
   return (
-    <p className={state.ok ? `${compact ? "" : "md:col-span-2"} ${className} text-sm font-medium text-success` : `${compact ? "" : "md:col-span-2"} ${className} text-sm font-medium text-destructive`}>
-      {state.message}
+    <p
+      role="status"
+      aria-live="polite"
+      className={
+        state.ok
+          ? `${compact ? "" : "md:col-span-2"} ${className} flex items-center gap-1.5 text-sm font-medium text-success`
+          : `${compact ? "" : "md:col-span-2"} ${className} flex items-center gap-1.5 text-sm font-medium text-destructive`
+      }
+    >
+      {state.ok ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
+      <span>{state.message}</span>
     </p>
   );
 }

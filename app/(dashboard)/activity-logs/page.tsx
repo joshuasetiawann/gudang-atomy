@@ -34,14 +34,20 @@ export default async function ActivityLogsPage() {
   const rows = (data ?? []) as ActivityLogRow[];
 
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-6">
       <PageHeader
         kicker="Audit Trail"
         title="Activity Log"
         description="Riwayat aktivitas user, perubahan master data, scan, pergerakan stok, dan import."
         action={
-          <div className="rounded-md border bg-background/80 px-3 py-2 text-sm font-medium text-muted-foreground">
-            {rows.length} log terakhir
+          <div className="inline-flex items-center gap-2.5 rounded-md border bg-background/80 px-3.5 py-2.5 text-sm font-medium text-foreground shadow-soft">
+            <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary/10 text-primary ring-1 ring-primary/15">
+              <Activity className="h-4 w-4" />
+            </span>
+            <span>
+              <span className="font-mono tabular-nums">{rows.length}</span>
+              <span className="text-muted-foreground"> log terakhir</span>
+            </span>
           </div>
         }
       />
@@ -50,7 +56,7 @@ export default async function ActivityLogsPage() {
         <Card>
           <CardContent className="p-5">
             <p className="font-semibold text-destructive">Activity Log belum aktif di database.</p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
               Jalankan file SQL final terbaru di Supabase SQL Editor agar view dan trigger log dibuat.
             </p>
             <p className="mt-3 rounded-md border bg-background/65 p-3 font-mono text-xs text-muted-foreground">{error.message}</p>
@@ -79,18 +85,18 @@ export default async function ActivityLogsPage() {
           <TableBody>
             {rows.map((row) => (
               <TableRow key={`${row.entity_type}-${row.id}`}>
-                <TableCell className="whitespace-nowrap">{formatDateTime(row.created_at)}</TableCell>
+                <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">{formatDateTime(row.created_at)}</TableCell>
                 <TableCell>
-                  <div className="font-medium">{row.actor_name ?? "System"}</div>
-                  <div className="text-xs text-muted-foreground">{row.actor_email ?? row.actor_user_id ?? "-"}</div>
+                  <div className="font-medium text-foreground">{row.actor_name ?? "System"}</div>
+                  <div className="font-mono text-xs text-muted-foreground">{row.actor_email ?? row.actor_user_id ?? "-"}</div>
                 </TableCell>
-                <TableCell>{roleLabel(row.actor_role)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{roleLabel(row.actor_role)}</TableCell>
                 <TableCell>
                   <ActionBadge action={row.action ?? "-"} />
                 </TableCell>
-                <TableCell className="font-mono text-xs">{row.entity_type ?? "-"}</TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">{row.entity_type ?? "-"}</TableCell>
                 <TableCell>
-                  <div className="max-w-xl break-words">{row.summary ?? "-"}</div>
+                  <div className="max-w-xl break-words leading-relaxed">{row.summary ?? "-"}</div>
                   {row.record_id ? <div className="mt-1 font-mono text-xs text-muted-foreground">{row.record_id}</div> : null}
                 </TableCell>
               </TableRow>
@@ -107,13 +113,13 @@ export default async function ActivityLogsPage() {
 function InfoCard({ icon: Icon, title, description }: { icon: typeof Activity; title: string; description: string }) {
   return (
     <Card>
-      <CardContent className="flex gap-3 p-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+      <CardContent className="flex gap-3.5 p-5">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
           <Icon className="h-5 w-5" />
         </div>
-        <div>
-          <p className="font-semibold">{title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+        <div className="min-w-0">
+          <p className="font-semibold text-card-foreground">{title}</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
         </div>
       </CardContent>
     </Card>

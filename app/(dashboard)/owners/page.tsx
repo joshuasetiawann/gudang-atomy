@@ -10,7 +10,7 @@ export default async function OwnersPage() {
   const canEdit = profile.role === "super_admin" || profile.role === "admin_gudang";
 
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-6">
       <PageHeader kicker="Master Data" title="Owners" description="Master pemilik box dan barang." />
       <OwnerManager owners={data ?? []} canEdit={canEdit} />
     </div>

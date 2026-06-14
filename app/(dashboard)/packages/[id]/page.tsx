@@ -8,7 +8,7 @@ import { isUuidValue } from "@/lib/validation/uuid";
 
 export default async function PackageDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   const { id } = await params;
-  if (!isUuidValue(id)) return <p className="text-sm text-muted-foreground">Paket tidak ditemukan.</p>;
+  if (!isUuidValue(id)) return <p className="app-page text-sm text-muted-foreground">Paket tidak ditemukan.</p>;
 
   const profile = await getCurrentProfile();
   const supabase = await createClient();
@@ -19,11 +19,17 @@ export default async function PackageDetailPage({ params }: { params: Promise<{ 
   ]);
   const canEdit = profile.role === "super_admin" || profile.role === "admin_gudang";
 
-  if (!pkgResult.data) return <p className="text-sm text-muted-foreground">Paket tidak ditemukan.</p>;
+  if (!pkgResult.data) return <p className="app-page text-sm text-muted-foreground">Paket tidak ditemukan.</p>;
+
+  const items = itemsResult.data ?? [];
 
   return (
-    <div className="space-y-5">
-      <PageHeader kicker="Package Detail" title={pkgResult.data.package_name} description={pkgResult.data.package_code} />
+    <div className="app-page space-y-6">
+      <PageHeader
+        kicker="Package Detail"
+        title={pkgResult.data.package_name}
+        description={pkgResult.data.package_code}
+      />
       {canEdit ? (
         <PackageBuilder
           products={productsResult.data ?? []}
@@ -33,8 +39,12 @@ export default async function PackageDetailPage({ params }: { params: Promise<{ 
         />
       ) : null}
       <Card>
-        <CardHeader>
-          <CardTitle>Isi Paket</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <CardTitle>Isi paket</CardTitle>
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+            <span className="tabular-nums">{items.length}</span>
+            produk
+          </span>
         </CardHeader>
         <CardContent>
           <Table>
@@ -42,17 +52,25 @@ export default async function PackageDetailPage({ params }: { params: Promise<{ 
               <TableRow>
                 <TableHead>SKU</TableHead>
                 <TableHead>Produk</TableHead>
-                <TableHead>Qty/Paket</TableHead>
+                <TableHead className="text-right">Qty per paket</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(itemsResult.data ?? []).map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.products?.sku ?? "-"}</TableCell>
-                  <TableCell>{item.products?.product_name ?? item.product_id}</TableCell>
-                  <TableCell>{item.qty_per_package}</TableCell>
+              {items.length ? (
+                items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-mono text-[13px] text-muted-foreground">{item.products?.sku ?? "-"}</TableCell>
+                    <TableCell className="font-medium text-foreground">{item.products?.product_name ?? item.product_id}</TableCell>
+                    <TableCell className="text-right tabular-nums">{item.qty_per_package}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="py-10 text-center text-sm text-muted-foreground">
+                    Belum ada produk pada paket ini.
+                  </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

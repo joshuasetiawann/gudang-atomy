@@ -27,14 +27,15 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
   const { data } = await query;
 
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-6">
       <PageHeader
         kicker="Inventory Boxes"
         title="Data Box"
         description="Daftar box dengan filter status, owner, dan lokasi."
         action={
-          <div className="rounded-md border bg-background/80 px-3 py-2 text-sm font-medium text-muted-foreground">
-            {(data ?? []).length} box tampil
+          <div className="inline-flex items-center gap-2 rounded-md border bg-background/80 px-3 py-2 text-sm font-medium text-muted-foreground shadow-soft">
+            <span className="text-base font-semibold tabular-nums text-foreground">{(data ?? []).length}</span>
+            box tampil
           </div>
         }
       />
@@ -42,25 +43,36 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
         <CardContent className="p-4">
           <form className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_160px_auto]">
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input name="q" placeholder="Search ID Box / label client" defaultValue={params.q ?? ""} className="pl-9" />
+              <label htmlFor="filter-q" className="sr-only">Cari ID box atau label client</label>
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+              <Input id="filter-q" name="q" placeholder="Cari ID box / label client" defaultValue={params.q ?? ""} className="pl-9" />
             </div>
-            <Input name="owner" placeholder="Owner" defaultValue={params.owner ?? ""} />
-            <Input name="location" placeholder="Lokasi" defaultValue={params.location ?? ""} />
-            <select
-              name="status"
-              defaultValue={params.status ?? ""}
-              className="h-10 rounded-md border bg-card px-3 text-sm outline-none transition-all focus:border-primary/50 focus:ring-2 focus:ring-ring"
-            >
-              <option value="">Semua status</option>
-              <option value="active">active</option>
-              <option value="partial">partial</option>
-              <option value="empty">empty</option>
-              <option value="taken">taken</option>
-              <option value="void">void</option>
-            </select>
+            <div>
+              <label htmlFor="filter-owner" className="sr-only">Owner</label>
+              <Input id="filter-owner" name="owner" placeholder="Owner" defaultValue={params.owner ?? ""} />
+            </div>
+            <div>
+              <label htmlFor="filter-location" className="sr-only">Lokasi</label>
+              <Input id="filter-location" name="location" placeholder="Lokasi" defaultValue={params.location ?? ""} />
+            </div>
+            <div>
+              <label htmlFor="filter-status" className="sr-only">Status</label>
+              <select
+                id="filter-status"
+                name="status"
+                defaultValue={params.status ?? ""}
+                className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="">Semua status</option>
+                <option value="active">active</option>
+                <option value="partial">partial</option>
+                <option value="empty">empty</option>
+                <option value="taken">taken</option>
+                <option value="void">void</option>
+              </select>
+            </div>
             <Button className="md:w-fit">
-              <Filter className="h-4 w-4" />
+              <Filter className="h-4 w-4" aria-hidden="true" />
               Filter
             </Button>
           </form>
@@ -76,26 +88,26 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
               <TableHead>Status</TableHead>
               <TableHead>Expired</TableHead>
               <TableHead>Lokasi</TableHead>
-              <TableHead>Sisa</TableHead>
+              <TableHead className="text-right">Sisa</TableHead>
               <TableHead>Dibuat</TableHead>
-              <TableHead></TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {(data ?? []).map((box) => (
               <TableRow key={box.id}>
-                <TableCell className="font-mono">{box.id_box}</TableCell>
-                <TableCell>{box.box_name}</TableCell>
-                <TableCell>{box.owner_name}</TableCell>
+                <TableCell className="font-mono font-medium text-foreground">{box.id_box}</TableCell>
+                <TableCell className="font-medium">{box.box_name}</TableCell>
+                <TableCell className="text-muted-foreground">{box.owner_name}</TableCell>
                 <TableCell><StatusBadge status={box.status as BoxStatus} /></TableCell>
-                <TableCell>{formatDate(box.expired_at)}</TableCell>
-                <TableCell>{box.location_code ?? "-"}</TableCell>
-                <TableCell>{box.total_qty_available}</TableCell>
-                <TableCell>{formatDateTime(box.created_at)}</TableCell>
-                <TableCell>
-                  <Button asChild size="icon" variant="ghost" aria-label="Detail box">
+                <TableCell className="font-mono tabular-nums text-muted-foreground">{formatDate(box.expired_at)}</TableCell>
+                <TableCell className="font-mono">{box.location_code ?? <span className="text-muted-foreground">-</span>}</TableCell>
+                <TableCell className="text-right font-semibold tabular-nums text-foreground">{box.total_qty_available}</TableCell>
+                <TableCell className="font-mono tabular-nums text-muted-foreground">{formatDateTime(box.created_at)}</TableCell>
+                <TableCell className="text-right">
+                  <Button asChild size="icon" variant="ghost" aria-label={`Detail box ${box.id_box}`}>
                     <Link href={`/boxes/${box.id}`}>
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4" aria-hidden="true" />
                     </Link>
                   </Button>
                 </TableCell>

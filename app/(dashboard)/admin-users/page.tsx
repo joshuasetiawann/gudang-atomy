@@ -9,7 +9,7 @@ export default async function AdminUsersPage() {
   const { data } = await supabase.from("profiles").select("id, full_name, email, role, is_active").order("full_name");
 
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-6">
       <PageHeader kicker="Access Control" title="Admin Users" description="Kelola role profile user Supabase Auth." />
       <AdminUsersManager profiles={data ?? []} />
     </div>

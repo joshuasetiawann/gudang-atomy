@@ -4,21 +4,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:translate-y-px",
+  "inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-all duration-200 [&_svg]:size-4 [&_svg]:shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 active:translate-y-px active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        outline: "border bg-card shadow-sm hover:bg-muted",
+        default: "bg-primary text-primary-foreground shadow-soft shadow-primary/25 hover:bg-primary/90 hover:shadow-lift hover:shadow-primary/30",
+        secondary: "bg-secondary text-secondary-foreground shadow-soft hover:bg-secondary/80 hover:shadow",
+        outline: "border bg-card text-foreground shadow-soft hover:border-primary/40 hover:bg-muted hover:shadow",
         ghost: "hover:bg-muted hover:text-foreground",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        success: "bg-success text-success-foreground hover:bg-success/90"
+        destructive: "bg-destructive text-destructive-foreground shadow-soft shadow-destructive/25 hover:bg-destructive/90 hover:shadow-lift hover:shadow-destructive/30",
+        success: "bg-success text-success-foreground shadow-soft shadow-success/25 hover:bg-success/90 hover:shadow-lift hover:shadow-success/30"
       },
       size: {
         default: "h-10 px-4",
-        sm: "h-9 px-3",
-        lg: "h-11 px-5",
+        sm: "h-9 rounded-md px-3 text-[13px]",
+        lg: "h-11 rounded-md px-5",
         icon: "h-10 w-10 px-0"
       }
     },

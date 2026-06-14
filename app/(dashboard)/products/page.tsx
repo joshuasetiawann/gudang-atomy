@@ -10,7 +10,7 @@ export default async function ProductsPage() {
   const canEdit = profile.role === "super_admin" || profile.role === "admin_gudang";
 
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-6">
       <PageHeader kicker="Master Data" title="Products" description="Master produk Atomy dan komponen paket GudangKu." />
       <ProductManager products={data ?? []} canEdit={canEdit} />
     </div>

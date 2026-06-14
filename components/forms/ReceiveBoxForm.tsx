@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { Plus, PackagePlus, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Plus, PackagePlus, Trash2 } from "lucide-react";
 import { receiveBoxAction } from "@/server/actions/warehouse";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +52,7 @@ export function ReceiveBoxForm({
   }
 
   return (
-    <form action={formAction} className="space-y-5">
+    <form action={formAction} className="app-page space-y-5">
       <input type="hidden" name="source_type" value={sourceType} />
       <input type="hidden" name="items_json" value={sourceType === "package" ? "[]" : itemsJson} />
       <Card>
@@ -95,11 +95,14 @@ export function ReceiveBoxForm({
                 <button
                   key={option.value}
                   type="button"
+                  aria-pressed={sourceType === option.value}
                   onClick={() => setSourceType(option.value)}
-                  className={`rounded-md px-2 py-2 text-left transition-colors ${sourceType === option.value ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`rounded-md px-2 py-2 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                    sourceType === option.value ? "bg-card text-foreground shadow-soft ring-1 ring-primary/20" : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
                   <span className="block truncate text-sm font-semibold">{option.label}</span>
-                  <span className="hidden truncate text-xs md:block">{option.description}</span>
+                  <span className="hidden truncate text-xs text-muted-foreground md:block">{option.description}</span>
                 </button>
               ))}
             </div>
@@ -133,7 +136,7 @@ export function ReceiveBoxForm({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="package_qty">Jumlah paket</Label>
-                  <Input id="package_qty" name="package_qty" type="number" min="1" step="1" defaultValue="1" required />
+                  <Input id="package_qty" name="package_qty" type="number" min="1" step="1" defaultValue="1" required className="tabular-nums" />
                 </div>
               </>
             ) : (
@@ -160,11 +163,11 @@ export function ReceiveBoxForm({
           <CardContent className="space-y-3">
             {products.length ? (
               items.map((item, index) => (
-                <div key={index} className="grid gap-3 rounded-md border bg-background/65 p-3 md:grid-cols-[1fr_110px_150px_150px_40px]">
+                <div key={index} className="grid items-center gap-3 rounded-md border bg-background/65 p-3 transition-colors hover:border-primary/30 md:grid-cols-[1fr_110px_150px_150px_40px]">
                   <select
                     value={item.product_id}
                     onChange={(event) => updateItem(index, { product_id: event.target.value })}
-                    className="h-10 rounded-md border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    className="h-10 rounded-md border bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="" disabled>
                       Pilih produk
@@ -176,10 +179,10 @@ export function ReceiveBoxForm({
                       </option>
                     ))}
                   </select>
-                  <Input value={item.qty} onChange={(event) => updateItem(index, { qty: Number(event.target.value) })} type="number" min="1" step="1" />
-                  <Input value={item.expired_at ?? ""} onChange={(event) => updateItem(index, { expired_at: event.target.value })} type="date" />
-                  <Input value={item.batch_no ?? ""} onChange={(event) => updateItem(index, { batch_no: event.target.value })} placeholder="Batch" />
-                  <Button type="button" size="icon" variant="ghost" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label="Hapus produk">
+                  <Input value={item.qty} onChange={(event) => updateItem(index, { qty: Number(event.target.value) })} type="number" min="1" step="1" className="tabular-nums" />
+                  <Input value={item.expired_at ?? ""} onChange={(event) => updateItem(index, { expired_at: event.target.value })} type="date" className="font-mono tabular-nums" />
+                  <Input value={item.batch_no ?? ""} onChange={(event) => updateItem(index, { batch_no: event.target.value })} placeholder="Batch" className="font-mono" />
+                  <Button type="button" size="icon" variant="ghost" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label="Hapus produk" className="text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -192,13 +195,22 @@ export function ReceiveBoxForm({
       ) : null}
 
       {state.message ? (
-        <p className={state.ok ? "rounded-md border border-success/20 bg-success/10 p-3 text-sm font-medium text-success" : "rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-medium text-destructive"}>
-          {state.message}
+        <p
+          role="status"
+          aria-live="polite"
+          className={
+            state.ok
+              ? "animate-rise flex items-start gap-2 rounded-md border border-success/20 bg-success/10 p-3 text-sm font-medium text-success"
+              : "animate-rise flex items-start gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+          }
+        >
+          {state.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+          <span>{state.message}</span>
         </p>
       ) : null}
-      <Button disabled={submitDisabled} className="h-11">
+      <Button disabled={submitDisabled} size="lg">
         <PackagePlus className="h-4 w-4" />
-        {pending ? "Menyimpan..." : "Simpan Barang Masuk"}
+        {pending ? "Menyimpan..." : "Simpan barang masuk"}
       </Button>
     </form>
   );

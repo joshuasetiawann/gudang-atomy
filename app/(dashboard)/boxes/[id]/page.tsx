@@ -2,9 +2,10 @@ import { BoxLabel } from "@/components/labels/BoxLabel";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatusBadge } from "@/components/tables/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { isUuidValue } from "@/lib/validation/uuid";
 import type { BoxStatus } from "@/lib/types";
 
@@ -24,36 +25,43 @@ export default async function BoxDetailPage({ params }: { params: Promise<{ id: 
   const box = boxResult.data as unknown as BoxDetail | null;
   const movements = (movementResult.data ?? []) as unknown as BoxMovement[];
 
-  if (!box) return <p className="text-sm text-muted-foreground">Box tidak ditemukan.</p>;
+  if (!box) {
+    return <EmptyState title="Box tidak ditemukan" description="ID box tidak valid atau sudah dihapus." />;
+  }
 
   return (
-    <div className="space-y-5">
-      <PageHeader kicker="Box Detail" title={box.box_name} description={`ID Box App: ${box.id_box}`} action={<StatusBadge status={box.status as BoxStatus} />} />
+    <div className="app-page space-y-6">
+      <PageHeader
+        kicker="Box Detail"
+        title={box.box_name}
+        description={`ID Box App: ${box.id_box}`}
+        action={<StatusBadge status={box.status as BoxStatus} />}
+      />
 
       <div className="grid gap-5 xl:grid-cols-[420px_1fr]">
         <BoxLabel box={box} />
         <Card>
           <CardHeader>
-            <CardTitle>Detail Box</CardTitle>
+            <CardTitle>Detail box</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm md:grid-cols-2">
             <Info label="Pemilik" value={`${box.owners?.owner_code ?? "-"} - ${box.owners?.owner_name ?? "-"}`} />
-            <Info label="Pemilik ID Box" value={box.pemilik_id_box} />
-            <Info label="Barcode" value={box.barcode_value} />
+            <Info label="Pemilik ID box" value={box.pemilik_id_box} mono />
+            <Info label="Barcode" value={box.barcode_value} mono />
             <Info label="Source" value={box.source_type} />
-            <Info label="Expired" value={formatDate(box.expired_at)} />
-            <Info label="Lokasi" value={box.location_code ?? "-"} />
+            <Info label="Expired" value={formatDate(box.expired_at)} mono />
+            <Info label="Lokasi" value={box.location_code ?? "-"} mono />
             <Info label="Created by" value={box.created_by ?? "-"} />
-            <Info label="Created at" value={formatDateTime(box.created_at)} />
+            <Info label="Created at" value={formatDateTime(box.created_at)} mono />
             <Info label="Checked out by" value={box.checked_out_by ?? "-"} />
-            <Info label="Checked out at" value={formatDateTime(box.checked_out_at)} />
+            <Info label="Checked out at" value={formatDateTime(box.checked_out_at)} mono />
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Isi Produk</CardTitle>
+          <CardTitle>Isi produk</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -61,23 +69,31 @@ export default async function BoxDetailPage({ params }: { params: Promise<{ id: 
               <TableRow>
                 <TableHead>SKU</TableHead>
                 <TableHead>Produk</TableHead>
-                <TableHead>Qty Awal</TableHead>
-                <TableHead>Qty Sisa</TableHead>
+                <TableHead className="text-right">Qty awal</TableHead>
+                <TableHead className="text-right">Qty sisa</TableHead>
                 <TableHead>Expired</TableHead>
                 <TableHead>Batch</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {box.box_items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>{item.products?.sku ?? "-"}</TableCell>
-                  <TableCell>{item.products?.product_name ?? item.product_id}</TableCell>
-                  <TableCell>{item.qty_initial}</TableCell>
-                  <TableCell>{item.qty_available}</TableCell>
-                  <TableCell>{formatDate(item.expired_at)}</TableCell>
-                  <TableCell>{item.batch_no ?? "-"}</TableCell>
+              {box.box_items.length ? (
+                box.box_items.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-mono text-foreground">{item.products?.sku ?? "-"}</TableCell>
+                    <TableCell className="font-medium">{item.products?.product_name ?? item.product_id}</TableCell>
+                    <TableCell className="text-right tabular-nums text-muted-foreground">{item.qty_initial}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums text-foreground">{item.qty_available}</TableCell>
+                    <TableCell className="font-mono tabular-nums text-muted-foreground">{formatDate(item.expired_at)}</TableCell>
+                    <TableCell className="font-mono">{item.batch_no ?? <span className="text-muted-foreground">-</span>}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                    Belum ada produk di dalam box ini.
+                  </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -85,7 +101,7 @@ export default async function BoxDetailPage({ params }: { params: Promise<{ id: 
 
       <Card>
         <CardHeader>
-          <CardTitle>Riwayat Movement</CardTitle>
+          <CardTitle>Riwayat movement</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -94,24 +110,36 @@ export default async function BoxDetailPage({ params }: { params: Promise<{ id: 
                 <TableHead>Waktu</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Produk</TableHead>
-                <TableHead>Qty</TableHead>
-                <TableHead>Before</TableHead>
-                <TableHead>After</TableHead>
+                <TableHead className="text-right">Qty</TableHead>
+                <TableHead className="text-right">Before</TableHead>
+                <TableHead className="text-right">After</TableHead>
                 <TableHead>Catatan</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {movements.map((movement, index) => (
-                <TableRow key={`${movement.created_at}-${index}`}>
-                  <TableCell>{formatDateTime(movement.created_at)}</TableCell>
-                  <TableCell>{movement.movement_type}</TableCell>
-                  <TableCell>{movement.products?.product_name ?? "-"}</TableCell>
-                  <TableCell>{movement.qty}</TableCell>
-                  <TableCell>{movement.before_qty ?? "-"}</TableCell>
-                  <TableCell>{movement.after_qty ?? "-"}</TableCell>
-                  <TableCell>{movement.reason ?? movement.notes ?? "-"}</TableCell>
+              {movements.length ? (
+                movements.map((movement, index) => (
+                  <TableRow key={`${movement.created_at}-${index}`}>
+                    <TableCell className="whitespace-nowrap font-mono tabular-nums text-muted-foreground">{formatDateTime(movement.created_at)}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-sm bg-primary/10 px-2 py-0.5 font-mono text-xs font-medium text-primary ring-1 ring-primary/15">
+                        {movement.movement_type}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-medium">{movement.products?.product_name ?? <span className="font-normal text-muted-foreground">-</span>}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums text-foreground">{movement.qty}</TableCell>
+                    <TableCell className="text-right tabular-nums text-muted-foreground">{movement.before_qty ?? "-"}</TableCell>
+                    <TableCell className="text-right tabular-nums text-muted-foreground">{movement.after_qty ?? "-"}</TableCell>
+                    <TableCell className="text-muted-foreground">{movement.reason ?? movement.notes ?? "-"}</TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                    Belum ada riwayat movement untuk box ini.
+                  </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -157,11 +185,11 @@ type BoxMovement = {
   products: { sku: string | null; product_name: string } | null;
 };
 
-function Info({ label, value }: { label: string; value: string }) {
+function Info({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="rounded-md border bg-background/65 p-3">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 break-words font-semibold">{value}</p>
+    <div className="rounded-md border bg-background/65 p-3 shadow-soft transition-colors duration-200 hover:border-primary/30">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={cn("mt-1 break-words font-semibold text-foreground", mono && "font-mono tabular-nums")}>{value}</p>
     </div>
   );
 }

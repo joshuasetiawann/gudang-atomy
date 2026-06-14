@@ -56,46 +56,57 @@ export function CheckoutPanel() {
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[420px_1fr]">
+    <div className="app-page grid gap-5 lg:grid-cols-[420px_1fr]">
       <div className="space-y-4">
         <BarcodeScanner onDetected={lookup} />
         {message?.message ? (
-          <p className={message.ok ? "rounded-md border border-success/20 bg-success/10 p-3 text-sm font-medium text-success" : "rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-medium text-destructive"}>
-            {message.message}
+          <p
+            role="status"
+            aria-live="polite"
+            className={
+              message.ok
+                ? "animate-rise flex items-start gap-2 rounded-md border border-success/20 bg-success/10 p-3 text-sm font-medium text-success"
+                : "animate-rise flex items-start gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+            }
+          >
+            {message.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+            <span>{message.message}</span>
           </p>
         ) : null}
       </div>
 
-      <div className="rounded-lg border bg-card/95 p-5 shadow-card">
+      <div className="rounded-lg border bg-card/95 p-5 shadow-card backdrop-blur-sm">
         {!box ? (
           <div className="flex min-h-80 flex-col items-center justify-center text-center text-sm text-muted-foreground">
-            <div className="mb-4 rounded-lg bg-primary/10 p-4 text-primary">
-              <ScanLine className="h-7 w-7" />
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
+              <ScanLine className="h-6 w-6" />
             </div>
-            <p className="font-medium text-foreground">Belum ada box dipilih</p>
-            <p className="mt-1 max-w-sm">Scan QR atau input barcode manual untuk menampilkan detail box.</p>
+            <p className="text-base font-semibold text-foreground">Belum ada box dipilih</p>
+            <p className="mt-1.5 max-w-sm leading-relaxed">Scan QR atau input barcode manual untuk menampilkan detail box.</p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="animate-rise space-y-5">
             <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
-              <div>
-                <h2 className="text-lg font-semibold">{box.box_name}</h2>
-                <p className="font-mono text-sm text-muted-foreground">ID Box App: {box.id_box}</p>
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold tracking-tight">{box.box_name}</h2>
+                <p className="text-sm text-muted-foreground">
+                  ID Box App: <span className="font-mono text-foreground">{box.id_box}</span>
+                </p>
               </div>
               <StatusBadge status={box.status as BoxStatus} />
             </div>
 
             <div className="grid gap-3 text-sm md:grid-cols-2">
               <Info label="Pemilik" value={box.owners?.owner_name ?? "-"} />
-              <Info label="Expired" value={formatDate(box.expired_at)} />
-              <Info label="Lokasi" value={box.location_code ?? "-"} />
-              <Info label="Pemilik ID Box" value={box.pemilik_id_box} />
+              <Info label="Expired" value={formatDate(box.expired_at)} mono />
+              <Info label="Lokasi" value={box.location_code ?? "-"} mono />
+              <Info label="Pemilik ID Box" value={box.pemilik_id_box} mono />
             </div>
 
             {disabled ? (
-              <div className="flex items-start gap-2 rounded-md bg-warning/15 p-3 text-sm text-warning-foreground">
-                <AlertTriangle className="mt-0.5 h-4 w-4" />
-                Box dengan status ini tidak bisa diambil lagi.
+              <div className="flex items-start gap-2 rounded-md border border-warning/20 bg-warning/15 p-3 text-sm text-warning-foreground">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>Box dengan status ini tidak bisa diambil lagi.</span>
               </div>
             ) : null}
 
@@ -129,7 +140,7 @@ export function CheckoutPanel() {
             </div>
 
             <div>
-              <h3 className="mb-3 text-sm font-semibold">Ambil Per Produk</h3>
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Ambil per produk</h3>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -184,12 +195,12 @@ function PartialRow({
     <TableRow>
       <TableCell>
         <div className="font-medium">{item.products?.product_name ?? item.product_id}</div>
-        <div className="text-xs text-muted-foreground">{item.products?.sku ?? "-"}</div>
+        <div className="font-mono text-xs text-muted-foreground">{item.products?.sku ?? "-"}</div>
       </TableCell>
-      <TableCell>{item.qty_available}</TableCell>
+      <TableCell className="font-mono tabular-nums">{item.qty_available}</TableCell>
       <TableCell>
         <Input
-          className="w-24"
+          className="w-24 tabular-nums"
           type="number"
           min="0"
           max={item.qty_available}
@@ -209,11 +220,11 @@ function PartialRow({
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function Info({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="rounded-md border bg-background/70 p-3">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 break-words font-semibold">{value}</p>
+    <div className="rounded-md border bg-background/70 p-3 transition-colors hover:border-primary/30">
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={mono ? "mt-1 break-words font-mono text-sm font-semibold tabular-nums" : "mt-1 break-words font-semibold"}>{value}</p>
     </div>
   );
 }

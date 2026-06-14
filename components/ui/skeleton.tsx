@@ -7,9 +7,9 @@ export function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivEl
 
 export function SkeletonText({ lines = 3, className }: { lines?: number; className?: string }) {
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-2.5", className)}>
       {Array.from({ length: lines }).map((_, index) => (
-        <Skeleton key={index} className={cn("h-3", index === lines - 1 ? "w-2/3" : "w-full")} />
+        <Skeleton key={index} className={cn("h-3 rounded-sm", index === lines - 1 ? "w-2/3" : "w-full")} />
       ))}
     </div>
   );

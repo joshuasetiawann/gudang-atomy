@@ -1,3 +1,4 @@
+import { Lock } from "lucide-react";
 import { ReceiveBoxForm } from "@/components/forms/ReceiveBoxForm";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -15,12 +16,17 @@ export default async function BarangMasukPage() {
   const canEdit = profile.role === "super_admin" || profile.role === "admin_gudang";
 
   return (
-    <div className="space-y-5">
+    <div className="app-page space-y-6">
       <PageHeader kicker="Receiving" title="Barang Masuk" description="Input box baru, generate ID, dan cetak label QR." />
       {!canEdit ? (
-        <Alert>
-          <AlertTitle>Akses hanya lihat</AlertTitle>
-          <AlertDescription>Role viewer tidak dapat membuat barang masuk.</AlertDescription>
+        <Alert className="animate-rise flex items-start gap-3 border-warning/30 bg-warning/10">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-warning/15 text-warning ring-1 ring-warning/25">
+            <Lock className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <AlertTitle>Akses hanya lihat</AlertTitle>
+            <AlertDescription>Role viewer tidak dapat membuat barang masuk.</AlertDescription>
+          </div>
         </Alert>
       ) : (
         <ReceiveBoxForm owners={owners.data ?? []} products={products.data ?? []} packages={packages.data ?? []} />

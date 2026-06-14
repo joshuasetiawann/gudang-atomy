@@ -33,16 +33,22 @@ export default async function DashboardPage() {
   const latestRows = (latest.data ?? []) as unknown as LatestMovement[];
 
   return (
-    <div className="space-y-6">
-      <div className="animate-rise surface-panel flex flex-col gap-4 rounded-lg border p-5 sm:flex-row sm:items-center sm:justify-between">
+    <div className="app-page space-y-6">
+      <div className="animate-rise surface-panel relative flex flex-col gap-4 overflow-hidden rounded-xl border p-5 shadow-card sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,hsl(var(--primary)/0.55),hsl(var(--accent)/0.45))]" />
         <div>
-          <p className="text-xs font-semibold uppercase text-primary">Gudang Atomy</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-normal">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Ringkasan stok, box, dan aktivitas terbaru.</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Gudang Atomy</p>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-normal sm:text-3xl">Dashboard</h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">Ringkasan stok, box, dan aktivitas terbaru.</p>
         </div>
-        <div className="flex items-center gap-3 rounded-md border bg-background/80 px-3 py-2 text-sm text-muted-foreground">
-          <TrendingUp className="h-4 w-4 text-primary" />
-          <span>{todayMovements.count ?? 0} transaksi hari ini</span>
+        <div className="flex items-center gap-2.5 rounded-md border bg-background/80 px-3.5 py-2.5 text-sm font-medium text-foreground shadow-soft">
+          <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-primary/10 text-primary ring-1 ring-primary/15">
+            <TrendingUp className="h-4 w-4" />
+          </span>
+          <span>
+            <span className="font-mono tabular-nums">{todayMovements.count ?? 0}</span>
+            <span className="text-muted-foreground"> transaksi hari ini</span>
+          </span>
         </div>
       </div>
 
@@ -58,7 +64,10 @@ export default async function DashboardPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex-row items-center gap-2.5 space-y-0">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/15">
+            <Activity className="h-4 w-4" />
+          </span>
           <CardTitle>Aktivitas Terbaru</CardTitle>
         </CardHeader>
         <CardContent>
@@ -70,17 +79,19 @@ export default async function DashboardPage() {
                   <TableHead>Type</TableHead>
                   <TableHead>Box</TableHead>
                   <TableHead>Produk</TableHead>
-                  <TableHead>Qty</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {latestRows.map((movement, index) => (
                   <TableRow key={`${movement.created_at}-${index}`}>
-                    <TableCell>{formatDateTime(movement.created_at)}</TableCell>
-                    <TableCell>{movement.movement_type}</TableCell>
-                    <TableCell>{movement.boxes?.id_box ?? "-"}</TableCell>
-                    <TableCell>{movement.products?.product_name ?? "-"}</TableCell>
-                    <TableCell>{movement.qty}</TableCell>
+                    <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">{formatDateTime(movement.created_at)}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-sm bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">{movement.movement_type}</span>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{movement.boxes?.id_box ?? "-"}</TableCell>
+                    <TableCell className="font-medium text-foreground">{movement.products?.product_name ?? "-"}</TableCell>
+                    <TableCell className="text-right font-mono font-semibold tabular-nums">{movement.qty}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -122,12 +133,12 @@ function Metric({
 
   return (
     <Card className="overflow-hidden">
-      <CardContent className="flex items-center justify-between p-5">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="mt-2 text-3xl font-semibold">{value}</p>
+      <CardContent className="flex items-center justify-between gap-4 p-5">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-tight sm:text-[2rem]">{value.toLocaleString("id-ID")}</p>
         </div>
-        <div className={`rounded-md p-3 ring-1 ${toneClass}`}>
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ring-1 ${toneClass}`}>
           <Icon className="h-5 w-5" />
         </div>
       </CardContent>

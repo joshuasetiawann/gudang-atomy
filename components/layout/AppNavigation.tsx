@@ -42,7 +42,7 @@ export function AppNavigation({ role, variant }: { role: UserRole; variant: "sid
 
   if (variant === "mobile") {
     return (
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex gap-1 overflow-x-auto border-t bg-card/96 px-2 py-2 shadow-[0_-10px_30px_rgb(15_23_42_/_0.08)] backdrop-blur-xl lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex gap-1 overflow-x-auto border-t border-border/70 bg-card/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_-12px_hsl(var(--primary)/0.22)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden">
         {items.map((item) => {
           const active = isActive(pathname, item.href);
           return (
@@ -51,11 +51,12 @@ export function AppNavigation({ role, variant }: { role: UserRole; variant: "sid
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex h-16 min-w-20 flex-col items-center justify-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-muted hover:text-foreground active:scale-[0.98]",
-                active && "bg-primary/10 text-primary shadow-sm"
+                "relative flex h-16 min-w-20 flex-col items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-muted hover:text-foreground active:scale-[0.98]",
+                active && "bg-primary/10 text-primary"
               )}
             >
-              <item.icon className="h-5 w-5" />
+              {active ? <span className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary" /> : null}
+              <item.icon className={cn("h-5 w-5 shrink-0 transition-transform duration-200", active && "scale-105")} />
               <span className="max-w-full truncate px-1">{item.shortLabel}</span>
             </Link>
           );
@@ -65,7 +66,7 @@ export function AppNavigation({ role, variant }: { role: UserRole; variant: "sid
   }
 
   return (
-    <nav className="space-y-1.5 p-3">
+    <nav className="space-y-1 p-3">
       {items.map((item) => {
         const active = isActive(pathname, item.href);
         return (
@@ -74,12 +75,22 @@ export function AppNavigation({ role, variant }: { role: UserRole; variant: "sid
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-muted hover:text-foreground active:translate-y-px",
-              active && "bg-primary text-primary-foreground shadow-sm hover:bg-primary hover:text-primary-foreground"
+              "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-muted hover:text-foreground active:translate-y-px",
+              active &&
+                "bg-[linear-gradient(120deg,hsl(var(--primary)),hsl(var(--primary)/0.88))] text-primary-foreground shadow-card hover:text-primary-foreground"
             )}
           >
-            {active ? <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r bg-primary-foreground/80" /> : null}
-            <item.icon className={cn("h-4 w-4 shrink-0", active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />
+            {active ? (
+              <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-primary-foreground/85" />
+            ) : (
+              <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 scale-y-0 rounded-r-full bg-primary/40 transition-transform duration-200 group-hover:scale-y-100" />
+            )}
+            <item.icon
+              className={cn(
+                "h-4 w-4 shrink-0 transition-colors duration-200",
+                active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+              )}
+            />
             <span className="truncate">{item.label}</span>
           </Link>
         );

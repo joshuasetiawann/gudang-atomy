@@ -49,7 +49,7 @@ export default async function PrintResiPage() {
 
   if (error) {
     return (
-      <div className="space-y-5">
+      <div className="app-page no-print space-y-5">
         <PageHeader
           kicker="Batch Print"
           title="Print Resi"

@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Papa from "papaparse";
-import { Upload } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Upload } from "lucide-react";
 import { importCsvRowsAction } from "@/server/actions/warehouse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,8 +21,8 @@ const importTypes = [
 
 export function CsvImportPanel() {
   return (
-    <Tabs defaultValue="owners">
-      <TabsList className="flex h-auto flex-wrap">
+    <Tabs defaultValue="owners" className="app-page">
+      <TabsList className="flex h-auto flex-wrap gap-1">
         {importTypes.map((type) => (
           <TabsTrigger key={type.value} value={type.value}>
             {type.label}
@@ -74,48 +74,73 @@ function CsvImportTab({ importType, required }: { importType: string; required: 
   const headers = Object.keys(rows[0] ?? {});
 
   return (
-    <div className="space-y-4 rounded-lg border bg-card p-4 shadow-soft">
+    <div className="space-y-4 rounded-lg border bg-card/95 p-5 shadow-card backdrop-blur-sm">
       <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-        <Input type="file" accept=".csv,text/csv" onChange={(event) => event.target.files?.[0] && parseFile(event.target.files[0])} />
+        <Input type="file" accept=".csv,text/csv" onChange={(event) => event.target.files?.[0] && parseFile(event.target.files[0])} className="cursor-pointer file:mr-3 file:cursor-pointer file:rounded-sm file:px-2 file:py-1 file:text-primary" />
         <Button type="button" onClick={submit} disabled={!rows.length || errors.length > 0 || pending}>
           <Upload className="h-4 w-4" />
           {pending ? "Import..." : "Import"}
         </Button>
       </div>
 
-      <p className="text-sm text-muted-foreground">Kolom wajib: {required.join(", ")}</p>
+      <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+        <span className="font-medium">Kolom wajib:</span>
+        {required.map((field) => (
+          <span key={field} className="inline-flex items-center rounded-sm bg-primary/10 px-2 py-0.5 font-mono text-xs font-medium text-primary">
+            {field}
+          </span>
+        ))}
+      </div>
       {errors.length ? (
-        <div className="max-h-40 overflow-auto rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+        <div role="alert" className="animate-rise max-h-40 space-y-1 overflow-auto rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+          <p className="mb-1 flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {errors.length} kesalahan ditemukan
+          </p>
           {errors.slice(0, 20).map((error) => (
-            <p key={error}>{error}</p>
+            <p key={error} className="pl-6">{error}</p>
           ))}
         </div>
       ) : null}
       {message?.message ? (
-        <p className={message.ok ? "rounded-md bg-success/10 p-3 text-sm text-success" : "rounded-md bg-destructive/10 p-3 text-sm text-destructive"}>
-          {message.message}
+        <p
+          role="status"
+          aria-live="polite"
+          className={
+            message.ok
+              ? "animate-rise flex items-start gap-2 rounded-md border border-success/20 bg-success/10 p-3 text-sm font-medium text-success"
+              : "animate-rise flex items-start gap-2 rounded-md border border-destructive/20 bg-destructive/10 p-3 text-sm font-medium text-destructive"
+          }
+        >
+          {message.ok ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />}
+          <span>{message.message}</span>
         </p>
       ) : null}
 
       {rows.length ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {headers.map((header) => (
-                <TableHead key={header}>{header}</TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {rows.slice(0, 10).map((row, index) => (
-              <TableRow key={index}>
+        <div className="space-y-2">
+          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Pratinjau <span className="font-mono tabular-nums">{Math.min(rows.length, 10)}</span> dari <span className="font-mono tabular-nums">{rows.length}</span> baris
+          </p>
+          <Table>
+            <TableHeader>
+              <TableRow>
                 {headers.map((header) => (
-                  <TableCell key={header}>{row[header]}</TableCell>
+                  <TableHead key={header} className="font-mono normal-case">{header}</TableHead>
                 ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {rows.slice(0, 10).map((row, index) => (
+                <TableRow key={index}>
+                  {headers.map((header) => (
+                    <TableCell key={header} className="font-mono text-xs">{row[header]}</TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       ) : null}
     </div>
   );

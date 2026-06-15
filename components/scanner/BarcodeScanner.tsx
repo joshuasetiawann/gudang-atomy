@@ -13,6 +13,8 @@ type VideoDevice = {
   label: string;
 };
 
+const backCameraPattern = /(back|rear|environment|belakang)/i;
+
 export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
@@ -29,8 +31,9 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
           deviceId: device.deviceId,
           label: device.label || `Kamera ${index + 1}`
         }));
+        const preferredDevice = mapped.find((device) => backCameraPattern.test(device.label));
         setDevices(mapped);
-        setDeviceId(mapped[0]?.deviceId ?? "");
+        setDeviceId(preferredDevice?.deviceId ?? "");
       })
       .catch(() => setError("Kamera belum bisa diakses."));
 
@@ -42,13 +45,17 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
     setError(null);
     try {
       const reader = new BrowserMultiFormatReader();
-      controlsRef.current = await reader.decodeFromVideoDevice(deviceId || undefined, videoRef.current, (result) => {
+      controlsRef.current?.stop();
+      const onResult = (result: { getText: () => string } | undefined | null) => {
         if (result) {
           onDetected(result.getText());
           controlsRef.current?.stop();
           setRunning(false);
         }
-      });
+      };
+      controlsRef.current = deviceId
+        ? await reader.decodeFromVideoDevice(deviceId, videoRef.current, onResult)
+        : await reader.decodeFromConstraints({ video: { facingMode: { ideal: "environment" } } }, videoRef.current, onResult);
       setRunning(true);
     } catch (scanError) {
       setError(scanError instanceof Error ? scanError.message : "Scanner gagal berjalan.");
@@ -113,6 +120,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
             onChange={(event) => setDeviceId(event.target.value)}
             className="h-10 w-full rounded-md border bg-card px-3 text-sm shadow-soft outline-none transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-ring"
           >
+            <option value="">Kamera belakang otomatis</option>
             {devices.map((device) => (
               <option key={device.deviceId} value={device.deviceId}>
                 {device.label}

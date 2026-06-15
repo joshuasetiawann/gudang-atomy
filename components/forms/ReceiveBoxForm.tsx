@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import type { ActionState, Owner, PackageTemplate, Product } from "@/lib/types";
 
@@ -36,7 +37,26 @@ export function ReceiveBoxForm({
 }) {
   const [state, formAction, pending] = useActionState(receiveBoxAction, initialState);
   const [sourceType, setSourceType] = useState<"custom" | "package" | "mixed">("custom");
+  const [ownerId, setOwnerId] = useState("");
   const [items, setItems] = useState<ManualItem[]>([{ product_id: "", qty: 1 }]);
+  const ownerOptions = useMemo(
+    () =>
+      owners.map((owner) => ({
+        value: owner.id,
+        label: `${owner.owner_code} - ${owner.owner_name}`,
+        description: owner.atomy_member_id || owner.phone || undefined
+      })),
+    [owners]
+  );
+  const productOptions = useMemo(
+    () =>
+      products.map((product) => ({
+        value: product.id,
+        label: `${product.sku ? `${product.sku} - ` : ""}${product.product_name}`,
+        description: [product.category, product.unit].filter(Boolean).join(" / ") || undefined
+      })),
+    [products]
+  );
   const itemsJson = useMemo(() => JSON.stringify(items.filter((item) => item.product_id && Number(item.qty) > 0)), [items]);
   const hasManualItem = items.some((item) => item.product_id && Number(item.qty) > 0);
   const needsPackage = sourceType !== "custom";
@@ -63,14 +83,16 @@ export function ReceiveBoxForm({
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="owner_id">Pemilik existing</Label>
-            <select id="owner_id" name="owner_id" className="h-10 w-full rounded-md border bg-card px-3 text-sm outline-none focus:ring-2 focus:ring-ring">
-              <option value="">Pilih pemilik</option>
-              {owners.map((owner) => (
-                <option key={owner.id} value={owner.id}>
-                  {owner.owner_code} - {owner.owner_name}
-                </option>
-              ))}
-            </select>
+            <SearchableSelect
+              id="owner_id"
+              name="owner_id"
+              value={ownerId}
+              onValueChange={setOwnerId}
+              options={ownerOptions}
+              placeholder="Pilih pemilik"
+              searchPlaceholder="Ketik kode atau nama pemilik..."
+              emptyText="Pemilik tidak ditemukan"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="quick_owner_name">Tambah pemilik cepat</Label>
@@ -90,14 +112,14 @@ export function ReceiveBoxForm({
           </div>
           <div className="space-y-2">
             <Label>Tipe barang</Label>
-            <div className="grid gap-1 rounded-lg border bg-muted/45 p-1 sm:grid-cols-3">
+            <div className="grid grid-cols-3 gap-1 rounded-lg border bg-muted/45 p-1">
               {sourceOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   aria-pressed={sourceType === option.value}
                   onClick={() => setSourceType(option.value)}
-                  className={`rounded-md px-2 py-2 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  className={`min-w-0 rounded-md px-2 py-2 text-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     sourceType === option.value ? "bg-card text-foreground shadow-soft ring-1 ring-primary/20" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -164,21 +186,14 @@ export function ReceiveBoxForm({
             {products.length ? (
               items.map((item, index) => (
                 <div key={index} className="grid min-w-0 items-center gap-3 rounded-md border bg-background/65 p-3 transition-colors hover:border-primary/30 md:grid-cols-[minmax(0,1fr)_110px_150px_150px_40px]">
-                  <select
+                  <SearchableSelect
                     value={item.product_id}
-                    onChange={(event) => updateItem(index, { product_id: event.target.value })}
-                    className="h-10 min-w-0 rounded-md border bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    <option value="" disabled>
-                      Pilih produk
-                    </option>
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.sku ? `${product.sku} - ` : ""}
-                        {product.product_name}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(value) => updateItem(index, { product_id: value })}
+                    options={productOptions}
+                    placeholder="Pilih produk"
+                    searchPlaceholder="Ketik nama produk atau SKU..."
+                    emptyText="Produk tidak ditemukan"
+                  />
                   <Input value={item.qty} onChange={(event) => updateItem(index, { qty: Number(event.target.value) })} type="number" min="1" step="1" className="tabular-nums" />
                   <Input value={item.expired_at ?? ""} onChange={(event) => updateItem(index, { expired_at: event.target.value })} type="date" className="font-mono tabular-nums" />
                   <Input value={item.batch_no ?? ""} onChange={(event) => updateItem(index, { batch_no: event.target.value })} placeholder="Batch" className="font-mono" />

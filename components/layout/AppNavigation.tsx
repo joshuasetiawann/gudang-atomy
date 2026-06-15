@@ -42,7 +42,7 @@ export function AppNavigation({ role, variant }: { role: UserRole; variant: "sid
 
   if (variant === "mobile") {
     return (
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex gap-1 overflow-x-auto overscroll-x-contain border-t border-border/70 bg-card/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_-12px_hsl(var(--primary)/0.22)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-50 flex gap-1 overflow-x-auto overscroll-x-contain border-t border-border/70 bg-card/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_-12px_hsl(var(--primary)/0.22)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden">
         {items.map((item) => {
           const active = isActive(pathname, item.href);
           return (

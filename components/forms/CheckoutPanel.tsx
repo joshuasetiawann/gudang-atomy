@@ -56,7 +56,7 @@ export function CheckoutPanel() {
   }
 
   return (
-    <div className="app-page grid gap-5 lg:grid-cols-[420px_1fr]">
+    <div className="app-page grid min-w-0 gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
       <div className="space-y-4">
         <BarcodeScanner onDetected={lookup} />
         {message?.message ? (
@@ -75,7 +75,7 @@ export function CheckoutPanel() {
         ) : null}
       </div>
 
-      <div className="rounded-lg border bg-card/95 p-5 shadow-card backdrop-blur-sm">
+      <div className="min-w-0 rounded-lg border bg-card/95 p-4 shadow-card backdrop-blur-sm sm:p-5">
         {!box ? (
           <div className="flex min-h-80 flex-col items-center justify-center text-center text-sm text-muted-foreground">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15">
@@ -86,14 +86,16 @@ export function CheckoutPanel() {
           </div>
         ) : (
           <div className="animate-rise space-y-5">
-            <div className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold tracking-tight">{box.box_name}</h2>
+            <div className="flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-1">
+                <h2 className="break-words text-lg font-semibold tracking-tight">{box.box_name}</h2>
                 <p className="text-sm text-muted-foreground">
-                  ID Box App: <span className="font-mono text-foreground">{box.id_box}</span>
+                  ID Box App: <span className="break-all font-mono text-foreground">{box.id_box}</span>
                 </p>
               </div>
-              <StatusBadge status={box.status as BoxStatus} />
+              <div className="shrink-0">
+                <StatusBadge status={box.status as BoxStatus} />
+              </div>
             </div>
 
             <div className="grid gap-3 text-sm md:grid-cols-2">
@@ -110,10 +112,10 @@ export function CheckoutPanel() {
               </div>
             ) : null}
 
-            <div className="flex flex-wrap gap-2">
+            <div className="grid gap-2 sm:flex sm:flex-wrap">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button disabled={disabled || pending} variant="destructive">
+                  <Button className="w-full sm:w-auto" disabled={disabled || pending} variant="destructive">
                     <PackageCheck className="h-4 w-4" />
                     Ambil Semua Box
                   </Button>
@@ -141,29 +143,44 @@ export function CheckoutPanel() {
 
             <div>
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">Ambil per produk</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Produk</TableHead>
-                    <TableHead>Sisa</TableHead>
-                    <TableHead>Ambil</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {box.box_items.map((item) => (
-                    <PartialRow
-                      key={item.id}
-                      item={item}
-                      disabled={disabled}
-                      pending={pending}
-                      qtyValue={qtyByProduct[item.product_id] ?? ""}
-                      onQtyChange={(value) => setQtyByProduct((current) => ({ ...current, [item.product_id]: value }))}
-                      onCheckout={() => checkoutPartial(item)}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
+              <div className="space-y-3 md:hidden">
+                {box.box_items.map((item) => (
+                  <PartialItemCard
+                    key={item.id}
+                    item={item}
+                    disabled={disabled}
+                    pending={pending}
+                    qtyValue={qtyByProduct[item.product_id] ?? ""}
+                    onQtyChange={(value) => setQtyByProduct((current) => ({ ...current, [item.product_id]: value }))}
+                    onCheckout={() => checkoutPartial(item)}
+                  />
+                ))}
+              </div>
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Produk</TableHead>
+                      <TableHead>Sisa</TableHead>
+                      <TableHead>Ambil</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {box.box_items.map((item) => (
+                      <PartialRow
+                        key={item.id}
+                        item={item}
+                        disabled={disabled}
+                        pending={pending}
+                        qtyValue={qtyByProduct[item.product_id] ?? ""}
+                        onQtyChange={(value) => setQtyByProduct((current) => ({ ...current, [item.product_id]: value }))}
+                        onCheckout={() => checkoutPartial(item)}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </div>
         )}
@@ -220,11 +237,63 @@ function PartialRow({
   );
 }
 
+function PartialItemCard({
+  item,
+  disabled,
+  pending,
+  qtyValue,
+  onQtyChange,
+  onCheckout
+}: {
+  item: BoxItem;
+  disabled: boolean;
+  pending: boolean;
+  qtyValue: string;
+  onQtyChange: (value: string) => void;
+  onCheckout: () => void;
+}) {
+  const qty = Number(qtyValue);
+  const available = Number(item.qty_available);
+  const invalidQty = !Number.isFinite(qty) || qty <= 0 || qty > available;
+
+  return (
+    <div className="rounded-lg border bg-background/70 p-3 shadow-soft">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="break-words font-medium text-foreground">{item.products?.product_name ?? item.product_id}</p>
+          <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{item.products?.sku ?? "-"}</p>
+        </div>
+        <div className="shrink-0 rounded-md bg-muted px-2 py-1 text-right">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Sisa</p>
+          <p className="font-mono text-sm font-semibold tabular-nums">{item.qty_available}</p>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+        <Input
+          className="min-w-0 tabular-nums"
+          type="number"
+          min="0"
+          max={item.qty_available}
+          step="1"
+          value={qtyValue}
+          onChange={(event) => onQtyChange(event.target.value)}
+          disabled={disabled || available <= 0}
+          aria-label={`Jumlah ambil ${item.products?.product_name ?? item.product_id}`}
+        />
+        <Button type="button" size="sm" variant="outline" disabled={disabled || pending || invalidQty} onClick={onCheckout}>
+          <CheckCircle2 className="h-4 w-4" />
+          Ambil
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function Info({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="rounded-md border bg-background/70 p-3 transition-colors hover:border-primary/30">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={mono ? "mt-1 break-words font-mono text-sm font-semibold tabular-nums" : "mt-1 break-words font-semibold"}>{value}</p>
+      <p className={mono ? "mt-1 break-all font-mono text-sm font-semibold tabular-nums" : "mt-1 break-words font-semibold"}>{value}</p>
     </div>
   );
 }

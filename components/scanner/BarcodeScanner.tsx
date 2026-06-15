@@ -61,7 +61,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
   }
 
   return (
-    <div className="space-y-4 rounded-lg border bg-card p-4 shadow-card">
+    <div className="min-w-0 space-y-4 rounded-lg border bg-card p-3 shadow-card sm:p-4">
       <div>
         <div className="flex items-center gap-2 text-sm font-semibold">
           <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary ring-1 ring-primary/15">
@@ -72,7 +72,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
         <p className="mt-1 text-xs text-muted-foreground">Gunakan kamera atau masukkan kode barcode manual.</p>
       </div>
       <div className="group relative overflow-hidden rounded-lg border bg-slate-950 shadow-inner">
-        <video ref={videoRef} className="aspect-[4/3] w-full object-cover" muted playsInline />
+        <video ref={videoRef} className="aspect-square w-full object-cover sm:aspect-[4/3]" muted playsInline />
         {/* Bingkai pemindai sebagai panduan visual */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
           <div
@@ -121,18 +121,18 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
           </select>
         </div>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" onClick={start} disabled={running}>
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        <Button className="w-full sm:w-auto" type="button" onClick={start} disabled={running}>
           <Camera className="h-4 w-4" />
           Mulai
         </Button>
-        <Button type="button" onClick={stop} variant="outline" disabled={!running}>
+        <Button className="w-full sm:w-auto" type="button" onClick={stop} variant="outline" disabled={!running}>
           <Square className="h-4 w-4" />
           Berhenti
         </Button>
       </div>
       <form
-        className="grid gap-2 sm:grid-cols-[1fr_auto]"
+        className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"
         onSubmit={(event) => {
           event.preventDefault();
           if (manualValue.trim()) onDetected(manualValue.trim());
@@ -142,9 +142,9 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
           value={manualValue}
           onChange={(event) => setManualValue(event.target.value)}
           placeholder="ATMY_BOX:BOX-YYYYMMDD-000001:XXXX"
-          className="font-mono"
+          className="min-w-0 font-mono text-xs sm:text-sm"
         />
-        <Button type="submit" variant="secondary">
+        <Button className="w-full sm:w-auto" type="submit" variant="secondary">
           <Keyboard className="h-4 w-4" />
           Input
         </Button>

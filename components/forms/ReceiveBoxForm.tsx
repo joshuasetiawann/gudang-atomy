@@ -90,7 +90,7 @@ export function ReceiveBoxForm({
           </div>
           <div className="space-y-2">
             <Label>Tipe barang</Label>
-            <div className="grid grid-cols-3 rounded-lg border bg-muted/45 p-1">
+            <div className="grid gap-1 rounded-lg border bg-muted/45 p-1 sm:grid-cols-3">
               {sourceOptions.map((option) => (
                 <button
                   key={option.value}
@@ -150,12 +150,12 @@ export function ReceiveBoxForm({
 
       {sourceType !== "package" ? (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <CardTitle>Produk Manual</CardTitle>
               <CardDescription>Tambahkan item satuan jika box bukan dari paket, atau ada tambahan di luar paket.</CardDescription>
             </div>
-            <Button type="button" variant="outline" size="sm" disabled={!products.length} onClick={() => setItems((current) => [...current, { product_id: "", qty: 1 }])}>
+            <Button className="w-full sm:w-auto" type="button" variant="outline" size="sm" disabled={!products.length} onClick={() => setItems((current) => [...current, { product_id: "", qty: 1 }])}>
               <Plus className="h-4 w-4" />
               Tambah
             </Button>
@@ -163,11 +163,11 @@ export function ReceiveBoxForm({
           <CardContent className="space-y-3">
             {products.length ? (
               items.map((item, index) => (
-                <div key={index} className="grid items-center gap-3 rounded-md border bg-background/65 p-3 transition-colors hover:border-primary/30 md:grid-cols-[1fr_110px_150px_150px_40px]">
+                <div key={index} className="grid min-w-0 items-center gap-3 rounded-md border bg-background/65 p-3 transition-colors hover:border-primary/30 md:grid-cols-[minmax(0,1fr)_110px_150px_150px_40px]">
                   <select
                     value={item.product_id}
                     onChange={(event) => updateItem(index, { product_id: event.target.value })}
-                    className="h-10 rounded-md border bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
+                    className="h-10 min-w-0 rounded-md border bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="" disabled>
                       Pilih produk
@@ -182,7 +182,7 @@ export function ReceiveBoxForm({
                   <Input value={item.qty} onChange={(event) => updateItem(index, { qty: Number(event.target.value) })} type="number" min="1" step="1" className="tabular-nums" />
                   <Input value={item.expired_at ?? ""} onChange={(event) => updateItem(index, { expired_at: event.target.value })} type="date" className="font-mono tabular-nums" />
                   <Input value={item.batch_no ?? ""} onChange={(event) => updateItem(index, { batch_no: event.target.value })} placeholder="Batch" className="font-mono" />
-                  <Button type="button" size="icon" variant="ghost" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label="Hapus produk" className="text-muted-foreground hover:text-destructive">
+                  <Button type="button" size="icon" variant="ghost" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label="Hapus produk" className="w-full text-muted-foreground hover:text-destructive md:w-10">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -208,7 +208,7 @@ export function ReceiveBoxForm({
           <span>{state.message}</span>
         </p>
       ) : null}
-      <Button disabled={submitDisabled} size="lg">
+      <Button className="w-full sm:w-auto" disabled={submitDisabled} size="lg">
         <PackagePlus className="h-4 w-4" />
         {pending ? "Menyimpan..." : "Simpan barang masuk"}
       </Button>

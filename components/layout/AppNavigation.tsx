@@ -42,7 +42,7 @@ export function AppNavigation({ role, variant }: { role: UserRole; variant: "sid
 
   if (variant === "mobile") {
     return (
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex gap-1 overflow-x-auto border-t border-border/70 bg-card/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_-12px_hsl(var(--primary)/0.22)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex gap-1 overflow-x-auto overscroll-x-contain border-t border-border/70 bg-card/90 px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_-12px_hsl(var(--primary)/0.22)] backdrop-blur-xl supports-[backdrop-filter]:bg-card/80 lg:hidden">
         {items.map((item) => {
           const active = isActive(pathname, item.href);
           return (
@@ -51,7 +51,7 @@ export function AppNavigation({ role, variant }: { role: UserRole; variant: "sid
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "relative flex h-16 min-w-20 flex-col items-center justify-center gap-1.5 rounded-md px-2 text-xs font-medium text-muted-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-muted hover:text-foreground active:scale-[0.98]",
+                "relative flex h-14 min-w-16 flex-col items-center justify-center gap-1 rounded-md px-2 text-[11px] font-medium text-muted-foreground transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:bg-muted hover:text-foreground active:scale-[0.98] sm:h-16 sm:min-w-20 sm:gap-1.5 sm:text-xs",
                 active && "bg-primary/10 text-primary"
               )}
             >

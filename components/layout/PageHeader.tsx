@@ -23,10 +23,10 @@ export function PageHeader({
               {kicker}
             </p>
           ) : null}
-          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h1>
+          <h1 className="mt-1.5 break-words text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</h1>
           {description ? <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{description}</p> : null}
         </div>
-        {action ? <div className="shrink-0">{action}</div> : null}
+        {action ? <div className="w-full sm:w-auto sm:shrink-0">{action}</div> : null}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
 import { AlertTriangle, Camera, Keyboard, ScanLine, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,16 +13,77 @@ type VideoDevice = {
   label: string;
 };
 
+type ScanResult = {
+  getText: () => string;
+};
+
 const backCameraPattern = /(back|rear|environment|belakang)/i;
 
 export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
+  const startRef = useRef<() => Promise<void>>(async () => {});
+  const autoStartedRef = useRef(false);
+  const detectedRef = useRef(false);
   const [devices, setDevices] = useState<VideoDevice[]>([]);
   const [deviceId, setDeviceId] = useState<string>("");
   const [manualValue, setManualValue] = useState("");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const stop = useCallback(() => {
+    controlsRef.current?.stop();
+    controlsRef.current = null;
+    setRunning(false);
+  }, []);
+
+  const start = useCallback(async () => {
+    if (!videoRef.current) return;
+    setError(null);
+    detectedRef.current = false;
+    try {
+      const reader = new BrowserMultiFormatReader();
+      controlsRef.current?.stop();
+      const onResult = (result: ScanResult | undefined | null) => {
+        if (!result || detectedRef.current) return;
+        detectedRef.current = true;
+        onDetected(result.getText());
+        controlsRef.current?.stop();
+        controlsRef.current = null;
+        setRunning(false);
+      };
+
+      if (deviceId) {
+        controlsRef.current = await reader.decodeFromVideoDevice(deviceId, videoRef.current, onResult);
+      } else {
+        try {
+          controlsRef.current = await reader.decodeFromConstraints(
+            {
+              audio: false,
+              video: {
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+              }
+            },
+            videoRef.current,
+            onResult
+          );
+        } catch {
+          controlsRef.current = await reader.decodeFromVideoDevice(undefined, videoRef.current, onResult);
+        }
+      }
+      setRunning(true);
+    } catch (scanError) {
+      setRunning(false);
+      controlsRef.current = null;
+      setError(scanError instanceof Error ? scanError.message : "Scanner gagal berjalan.");
+    }
+  }, [deviceId, onDetected]);
+
+  useEffect(() => {
+    startRef.current = start;
+  }, [start]);
 
   useEffect(() => {
     BrowserMultiFormatReader.listVideoInputDevices()
@@ -37,35 +98,17 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
       })
       .catch(() => setError("Kamera belum bisa diakses."));
 
-    return () => controlsRef.current?.stop();
+    return () => stop();
+  }, [stop]);
+
+  useEffect(() => {
+    if (autoStartedRef.current) return;
+    autoStartedRef.current = true;
+    const timer = window.setTimeout(() => {
+      void startRef.current();
+    }, 350);
+    return () => window.clearTimeout(timer);
   }, []);
-
-  async function start() {
-    if (!videoRef.current) return;
-    setError(null);
-    try {
-      const reader = new BrowserMultiFormatReader();
-      controlsRef.current?.stop();
-      const onResult = (result: { getText: () => string } | undefined | null) => {
-        if (result) {
-          onDetected(result.getText());
-          controlsRef.current?.stop();
-          setRunning(false);
-        }
-      };
-      controlsRef.current = deviceId
-        ? await reader.decodeFromVideoDevice(deviceId, videoRef.current, onResult)
-        : await reader.decodeFromConstraints({ video: { facingMode: { ideal: "environment" } } }, videoRef.current, onResult);
-      setRunning(true);
-    } catch (scanError) {
-      setError(scanError instanceof Error ? scanError.message : "Scanner gagal berjalan.");
-    }
-  }
-
-  function stop() {
-    controlsRef.current?.stop();
-    setRunning(false);
-  }
 
   return (
     <div className="min-w-0 space-y-4 rounded-lg border bg-card p-3 shadow-card sm:p-4">
@@ -117,7 +160,10 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
           <select
             id="camera"
             value={deviceId}
-            onChange={(event) => setDeviceId(event.target.value)}
+            onChange={(event) => {
+              setDeviceId(event.target.value);
+              stop();
+            }}
             className="h-10 w-full rounded-md border bg-card px-3 text-sm shadow-soft outline-none transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-ring"
           >
             <option value="">Kamera belakang otomatis</option>

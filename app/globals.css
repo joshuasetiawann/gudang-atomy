@@ -146,6 +146,18 @@ button {
   page-break-inside: avoid;
 }
 
+.print-compact-label {
+  display: none;
+}
+
+/* Pastikan garis barcode & background label ikut tercetak (bukan dianggap
+   "background graphics" yang sering dimatikan browser). */
+.print-label-card,
+.print-page {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
 @keyframes page-in {
   from {
     opacity: 0;
@@ -223,12 +235,43 @@ button {
   .print-label-sheet {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 6mm !important;
+    gap: 4mm !important;
+    align-content: start !important;
   }
 
   .print-label-card {
-    min-height: 132mm;
-    border-color: #111827 !important;
+    height: 50mm !important;
+    overflow: hidden !important;
+    padding: 4mm !important;
+    border: 1px solid #111827 !important;
+    border-radius: 4px !important;
     box-shadow: none !important;
+  }
+
+  .print-screen-label {
+    display: none !important;
+  }
+
+  .print-compact-label {
+    display: flex !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 2mm !important;
+  }
+
+  .print-compact-client {
+    display: -webkit-box !important;
+    max-height: 13mm !important;
+    overflow: hidden !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    font-size: 11pt !important;
+    line-height: 1.15 !important;
+  }
+
+  .print-compact-barcode {
+    height: 16mm !important;
   }
 }

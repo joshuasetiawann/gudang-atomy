@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import QRCode from "qrcode";
-import { Filter, Printer, RotateCcw, Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import { CheckSquare, Filter, Printer, RotateCcw, Search, Square } from "lucide-react";
+import { Barcode } from "@/components/labels/Barcode";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,8 @@ export function PrintResiClient({
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ready");
   const [productId, setProductId] = useState("");
-  const [qrMap, setQrMap] = useState<Record<string, string>>({});
+  // Simpan ID yang TIDAK dipilih. Dengan begitu label baru (hasil filter) otomatis ikut tercetak.
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(() => new Set());
 
   const filteredLabels = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -79,41 +80,36 @@ export function PrintResiClient({
     });
   }, [labels, productId, search, status]);
 
-  useEffect(() => {
-    let alive = true;
+  const selectedLabels = useMemo(
+    () => filteredLabels.filter((label) => !excludedIds.has(label.id)),
+    [filteredLabels, excludedIds]
+  );
+  const selectedCount = selectedLabels.length;
+  const allSelected = filteredLabels.length > 0 && selectedCount === filteredLabels.length;
+  const canPrint = selectedCount > 0;
 
-    if (filteredLabels.length === 0) return () => {
-      alive = false;
-    };
+  function toggleLabel(id: string) {
+    setExcludedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
-    Promise.all(
-      filteredLabels.map(async (label) => {
-        const url = await QRCode.toDataURL(label.barcode_value, { margin: 1, width: 260 });
-        return [label.id, url] as const;
-      })
-    )
-      .then((entries) => {
-        if (alive) {
-          setQrMap((current) => ({
-            ...current,
-            ...Object.fromEntries(entries)
-          }));
-        }
-      });
+  function selectAll() {
+    setExcludedIds(new Set());
+  }
 
-    return () => {
-      alive = false;
-    };
-  }, [filteredLabels]);
-
-  const readyCount = filteredLabels.filter((label) => qrMap[label.id]).length;
-  const isPreparing = filteredLabels.length > 0 && readyCount < filteredLabels.length;
-  const canPrint = filteredLabels.length > 0 && !isPreparing;
+  function clearSelection() {
+    setExcludedIds(new Set(filteredLabels.map((label) => label.id)));
+  }
 
   function resetFilters() {
     setSearch("");
     setStatus("ready");
     setProductId("");
+    setExcludedIds(new Set());
   }
 
   function printLabels() {
@@ -123,7 +119,7 @@ export function PrintResiClient({
   return (
     <div className="space-y-5">
       <div className="no-print surface-panel rounded-lg border p-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_190px_minmax(240px,320px)_auto_auto]">
+        <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_190px_minmax(220px,300px)]">
           <label className="space-y-2">
             <span className="text-xs font-semibold uppercase text-muted-foreground">Cari label</span>
             <div className="relative">
@@ -168,55 +164,63 @@ export function PrintResiClient({
               ))}
             </select>
           </label>
-          <div className="flex items-end">
-            <Button type="button" className="w-full lg:w-auto" disabled={!canPrint} onClick={printLabels}>
-              <Printer className="h-4 w-4" />
-              Print
-            </Button>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-2 rounded-md border bg-background/70 px-3 py-2 shadow-soft">
+              <Filter className="h-4 w-4 text-primary" />
+              <span>
+                <span className="font-mono font-semibold tabular-nums text-foreground">{filteredLabels.length}</span> label terfilter dari{" "}
+                <span className="font-mono tabular-nums text-foreground">{labels.length}</span> box
+              </span>
+            </span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-2 rounded-md border bg-background/70 px-3 py-2 shadow-soft transition-colors duration-200",
+                canPrint && "border-success/30 bg-success/10 text-success"
+              )}
+            >
+              {canPrint ? <span className="h-1.5 w-1.5 rounded-full bg-success" /> : null}
+              <span>
+                Dipilih cetak <span className="font-mono font-semibold tabular-nums">{selectedCount}</span>/
+                <span className="font-mono tabular-nums">{filteredLabels.length}</span>
+              </span>
+            </span>
           </div>
-          <div className="flex items-end">
-            <Button type="button" className="w-full lg:w-auto" variant="outline" onClick={resetFilters}>
+
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={allSelected ? clearSelection : selectAll}
+              disabled={filteredLabels.length === 0}
+            >
+              {allSelected ? <Square className="h-4 w-4" /> : <CheckSquare className="h-4 w-4" />}
+              {allSelected ? "Kosongkan" : "Pilih semua"}
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={resetFilters}>
               <RotateCcw className="h-4 w-4" />
               Reset
             </Button>
+            <Button type="button" size="sm" className="col-span-2 sm:col-span-1" disabled={!canPrint} onClick={printLabels}>
+              <Printer className="h-4 w-4" />
+              Print {selectedCount > 0 ? `(${selectedCount})` : ""}
+            </Button>
           </div>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-2 rounded-md border bg-background/70 px-3 py-2 shadow-soft">
-            <Filter className="h-4 w-4 text-primary" />
-            <span>
-              <span className="font-mono font-semibold tabular-nums text-foreground">{filteredLabels.length}</span> label terfilter dari{" "}
-              <span className="font-mono tabular-nums text-foreground">{labels.length}</span> box
-            </span>
-          </span>
-          <span
-            className={cn(
-              "inline-flex items-center gap-2 rounded-md border bg-background/70 px-3 py-2 shadow-soft transition-colors duration-200",
-              canPrint && "border-success/30 bg-success/10 text-success"
-            )}
-          >
-            {isPreparing ? (
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-warning" />
-            ) : canPrint ? (
-              <span className="h-1.5 w-1.5 rounded-full bg-success" />
-            ) : null}
-            {filteredLabels.length === 0 ? (
-              "Tidak ada label siap print"
-            ) : (
-              <span>
-                QR siap <span className="font-mono tabular-nums">{readyCount}</span>/
-                <span className="font-mono tabular-nums">{filteredLabels.length}</span>
-              </span>
-            )}
-          </span>
         </div>
       </div>
 
       {filteredLabels.length ? (
-        <div className="print-label-sheet grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="print-label-sheet grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filteredLabels.map((label) => (
-            <ResiLabelCard key={label.id} label={label} qrUrl={qrMap[label.id]} />
+            <ResiLabelCard
+              key={label.id}
+              label={label}
+              selected={!excludedIds.has(label.id)}
+              onToggle={() => toggleLabel(label.id)}
+            />
           ))}
         </div>
       ) : (
@@ -228,69 +232,98 @@ export function PrintResiClient({
   );
 }
 
-function ResiLabelCard({ label, qrUrl }: { label: PrintResiLabel; qrUrl?: string }) {
-  const visibleItems = label.items.slice(0, 5);
+function ResiLabelCard({
+  label,
+  selected,
+  onToggle
+}: {
+  label: PrintResiLabel;
+  selected: boolean;
+  onToggle: () => void;
+}) {
+  const visibleItems = label.items.slice(0, 4);
   const hiddenItemCount = Math.max(label.items.length - visibleItems.length, 0);
 
   return (
-    <article className="print-label-card rounded-lg border bg-white p-5 text-slate-950 shadow-soft transition-all duration-200 hover:shadow-lift">
-      <div className="relative">
-        <h2 className="text-center text-xl font-bold tracking-normal">Gudang Atomy</h2>
-        <div className="no-print absolute right-0 top-0">
+    <article
+      className={cn(
+        "print-label-card relative flex flex-col rounded-lg border bg-white p-4 text-slate-950 shadow-soft transition-all duration-200",
+        // Label yang tidak dipilih tidak ikut tercetak, dan diredupkan di layar.
+        selected ? "hover:shadow-lift" : "no-print opacity-45 grayscale"
+      )}
+    >
+      <div className="print-screen-label flex min-h-full flex-col">
+        <label className="no-print absolute left-3 top-3 z-10 flex cursor-pointer items-center gap-2 rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-slate-600 shadow-soft ring-1 ring-slate-200">
+          <input type="checkbox" checked={selected} onChange={onToggle} className="h-4 w-4 accent-emerald-600" />
+          Cetak
+        </label>
+        <div className="no-print absolute right-3 top-3 z-10">
           <StatusBadge status={label.status} />
+        </div>
+
+        <h2 className="mt-1 text-center text-lg font-bold tracking-normal print:text-base">Gudang Atomy</h2>
+
+        <div className="mt-3 grid gap-1.5 text-[13px] print:gap-1 print:text-xs">
+          <Row label="Label Client" value={label.box_name} />
+          <Row label="ID Box App" value={label.id_box} mono />
+          <Row label="Pemilik" value={label.owner_name ?? "-"} />
+          <Row label="Pemilik ID Box" value={label.pemilik_id_box} mono />
+          <div className="grid grid-cols-2 gap-2">
+            <Row label="Expired" value={formatDate(label.expired_at)} mono compact />
+            <Row label="Lokasi" value={label.location_code ?? "-"} mono compact />
+          </div>
+        </div>
+
+        <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2 text-[11px]">
+          <p className="font-bold uppercase tracking-wide text-slate-600">Isi box</p>
+          {visibleItems.length ? (
+            <div className="mt-1 space-y-0.5">
+              {visibleItems.map((item) => (
+                <div key={`${item.product_id}-${item.sku ?? ""}`} className="grid grid-cols-[1fr_auto] gap-2">
+                  <span className="truncate">{item.product_name}</span>
+                  <span className="font-semibold tabular-nums">
+                    {item.qty_available} {item.unit ?? "pcs"}
+                  </span>
+                </div>
+              ))}
+              {hiddenItemCount ? (
+                <p className="text-slate-500">
+                  +<span className="tabular-nums">{hiddenItemCount}</span> produk lain
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <p className="mt-1 text-slate-500">-</p>
+          )}
+        </div>
+
+        <div className="mt-auto pt-3">
+          <div className="h-14 w-full">
+            <Barcode value={label.barcode_value} />
+          </div>
+          <p className="mt-1 break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.barcode_value}</p>
         </div>
       </div>
 
-      <div className="mt-4 grid gap-2 text-sm">
-        <Row label="Label Client" value={label.box_name} />
-        <Row label="ID Box App" value={label.id_box} mono />
-        <Row label="Pemilik" value={label.owner_name ?? "-"} />
-        <Row label="Pemilik ID Box" value={label.pemilik_id_box} mono />
-        <Row label="Expired" value={formatDate(label.expired_at)} mono />
-        <Row label="Lokasi" value={label.location_code ?? "-"} mono />
+      <div className="print-compact-label">
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Label Client</p>
+          <p className="print-compact-client mt-1 text-center text-[15px] font-bold leading-snug text-slate-950">{label.box_name}</p>
+        </div>
+        <div className="print-compact-barcode h-16 w-full">
+          <Barcode value={label.barcode_value} />
+        </div>
+        <p className="break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.barcode_value}</p>
       </div>
-
-      <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2 text-xs">
-        <p className="font-bold uppercase tracking-wide text-slate-600">Isi box</p>
-        {visibleItems.length ? (
-          <div className="mt-1.5 space-y-1">
-            {visibleItems.map((item) => (
-              <div key={`${item.product_id}-${item.sku ?? ""}`} className="grid grid-cols-[1fr_auto] gap-2">
-                <span className="break-words">{item.product_name}</span>
-                <span className="font-semibold tabular-nums">
-                  {item.qty_available} {item.unit ?? "pcs"}
-                </span>
-              </div>
-            ))}
-            {hiddenItemCount ? (
-              <p className="text-slate-500">
-                +<span className="tabular-nums">{hiddenItemCount}</span> produk lain
-              </p>
-            ) : null}
-          </div>
-        ) : (
-          <p className="mt-1 text-slate-500">-</p>
-        )}
-      </div>
-
-      <div className="mt-4 flex justify-center">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        {qrUrl ? (
-          <img src={qrUrl} alt={label.barcode_value} className="h-44 w-44 rounded-sm" />
-        ) : (
-          <div className="skeleton-shimmer h-44 w-44 rounded-md" />
-        )}
-      </div>
-      <p className="mt-2 break-all text-center font-mono text-[11px] tracking-tight">{label.barcode_value}</p>
     </article>
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({ label, value, mono, compact }: { label: string; value: string; mono?: boolean; compact?: boolean }) {
   return (
-    <div className="grid grid-cols-[104px_1fr] gap-2">
-      <span className="font-bold">{label}</span>
-      <span className={cn("break-words", mono && "font-mono text-[13px] tracking-tight")}>{value}</span>
+    <div className={cn("grid gap-2", compact ? "grid-cols-[1fr]" : "grid-cols-[104px_1fr] print:grid-cols-[92px_1fr]")}>
+      <span className={cn("font-bold", compact && "text-[10px] uppercase tracking-wide text-slate-500")}>{label}</span>
+      <span className={cn("break-words", mono && "font-mono text-[12px] tracking-tight")}>{value}</span>
     </div>
   );
 }

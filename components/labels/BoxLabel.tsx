@@ -1,7 +1,7 @@
 "use client";
 
 import { Printer } from "lucide-react";
-import { Barcode } from "@/components/labels/Barcode";
+import { QrCodeImage } from "@/components/labels/QrCodeImage";
 import { Button } from "@/components/ui/button";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -31,12 +31,10 @@ export function BoxLabel({ box }: { box: LabelBox }) {
           <Row label="Expired" value={formatDate(box.expired_at)} mono />
           <Row label="Lokasi" value={box.location_code ?? "-"} mono />
         </div>
-        <div className="mt-5">
-          <div className="h-24 w-full">
-            <Barcode value={box.id_box} />
-          </div>
+        <div className="mt-5 flex justify-center">
+          <QrCodeImage value={box.barcode_value} className="h-52 w-52" />
         </div>
-        <p className="mt-2 break-all text-center font-mono text-xs tracking-tight">{box.id_box}</p>
+        <p className="mt-3 break-all text-center font-mono text-xs tracking-tight">{box.id_box}</p>
       </div>
       <Button type="button" className="no-print w-full sm:w-auto" onClick={() => window.print()}>
         <Printer className="h-4 w-4" />

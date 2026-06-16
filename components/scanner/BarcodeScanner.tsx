@@ -25,7 +25,7 @@ const scannerOptions = {
   tryPlayVideoTimeout: 5000
 };
 const scannerHints = new Map<DecodeHintType, unknown>([
-  [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128]],
+  [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.QR_CODE]],
   [DecodeHintType.TRY_HARDER, true]
 ]);
 
@@ -137,7 +137,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
           </span>
           Scan barcode box
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">Arahkan kamera ke barcode garis atau masukkan nomor box manual.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Arahkan kamera ke QR box atau masukkan nomor box manual.</p>
       </div>
       <div className="group relative overflow-hidden rounded-lg border bg-slate-950 shadow-inner">
         <video ref={videoRef} className="aspect-square w-full object-cover sm:aspect-[4/3]" muted playsInline />
@@ -214,7 +214,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
         <Input
           value={manualValue}
           onChange={(event) => setManualValue(event.target.value)}
-          placeholder="BOX-YYYYMMDD-000001 / GK-KARDUS-000001"
+          placeholder="Scan QR / BOX-YYYYMMDD-000001"
           className="min-w-0 font-mono text-xs sm:text-sm"
         />
         <Button className="w-full sm:w-auto" type="submit" variant="secondary">

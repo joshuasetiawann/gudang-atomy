@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CheckSquare, Filter, Printer, RotateCcw, Search, Square } from "lucide-react";
-import { Barcode } from "@/components/labels/Barcode";
+import { QrCodeImage } from "@/components/labels/QrCodeImage";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -298,9 +298,7 @@ function ResiLabelCard({
         </div>
 
         <div className="mt-auto pt-3">
-          <div className="h-20 w-full">
-            <Barcode value={label.id_box} />
-          </div>
+          <QrCodeImage value={label.barcode_value} className="mx-auto h-36 w-36" size={260} />
           <p className="mt-1 break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.id_box}</p>
         </div>
       </div>
@@ -310,9 +308,7 @@ function ResiLabelCard({
           <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Label Client</p>
           <p className="print-compact-client mt-1 text-center text-[15px] font-bold leading-snug text-slate-950">{label.box_name}</p>
         </div>
-        <div className="print-compact-barcode h-16 w-full">
-          <Barcode value={label.id_box} />
-        </div>
+        <QrCodeImage value={label.barcode_value} className="print-compact-barcode mx-auto h-24 w-24" size={240} />
         <p className="break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.id_box}</p>
       </div>
     </article>

@@ -279,6 +279,7 @@ button {
   }
 
   .print-compact-barcode {
-    height: 22mm !important;
+    width: 28mm !important;
+    height: 28mm !important;
   }
 }

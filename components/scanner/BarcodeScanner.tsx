@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
+import { BarcodeFormat, DecodeHintType } from "@zxing/library";
 import { AlertTriangle, Camera, Keyboard, ScanLine, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,32 @@ type ScanResult = {
 };
 
 const backCameraPattern = /(back|rear|environment|belakang)/i;
+const scannerOptions = {
+  delayBetweenScanAttempts: 80,
+  delayBetweenScanSuccess: 400,
+  tryPlayVideoTimeout: 5000
+};
+const scannerHints = new Map<DecodeHintType, unknown>([
+  [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128, BarcodeFormat.QR_CODE]],
+  [DecodeHintType.TRY_HARDER, true]
+]);
+
+function normalizeBarcodeValue(value: string) {
+  return value.replace(/\s+/g, "").trim();
+}
+
+function cameraConstraints() {
+  return {
+    audio: false,
+    video: {
+      facingMode: { ideal: "environment" },
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      focusMode: "continuous",
+      advanced: [{ focusMode: "continuous" }]
+    }
+  } as unknown as MediaStreamConstraints;
+}
 
 export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -42,12 +69,14 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
     setError(null);
     detectedRef.current = false;
     try {
-      const reader = new BrowserMultiFormatReader();
+      const reader = new BrowserMultiFormatReader(scannerHints, scannerOptions);
       controlsRef.current?.stop();
       const onResult = (result: ScanResult | undefined | null) => {
         if (!result || detectedRef.current) return;
+        const value = normalizeBarcodeValue(result.getText());
+        if (!value) return;
         detectedRef.current = true;
-        onDetected(result.getText());
+        onDetected(value);
         controlsRef.current?.stop();
         controlsRef.current = null;
         setRunning(false);
@@ -57,18 +86,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
         controlsRef.current = await reader.decodeFromVideoDevice(deviceId, videoRef.current, onResult);
       } else {
         try {
-          controlsRef.current = await reader.decodeFromConstraints(
-            {
-              audio: false,
-              video: {
-                facingMode: { ideal: "environment" },
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-              }
-            },
-            videoRef.current,
-            onResult
-          );
+          controlsRef.current = await reader.decodeFromConstraints(cameraConstraints(), videoRef.current, onResult);
         } catch {
           controlsRef.current = await reader.decodeFromVideoDevice(undefined, videoRef.current, onResult);
         }
@@ -189,7 +207,8 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
         className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]"
         onSubmit={(event) => {
           event.preventDefault();
-          if (manualValue.trim()) onDetected(manualValue.trim());
+          const value = normalizeBarcodeValue(manualValue);
+          if (value) onDetected(value);
         }}
       >
         <Input

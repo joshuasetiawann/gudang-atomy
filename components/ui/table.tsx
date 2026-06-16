@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 export function Table({ className, ...props }: React.TableHTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="max-w-full overflow-x-auto overscroll-x-contain rounded-lg border bg-card shadow-card">
-      <table className={cn("w-full min-w-[640px] caption-bottom text-sm sm:min-w-[720px]", className)} {...props} />
+    <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border bg-card shadow-card">
+      <table className={cn("w-full min-w-full caption-bottom text-sm sm:min-w-[720px]", className)} {...props} />
     </div>
   );
 }
@@ -22,9 +22,9 @@ export function TableRow({ className, ...props }: React.HTMLAttributes<HTMLTable
 }
 
 export function TableHead({ className, ...props }: React.ThHTMLAttributes<HTMLTableCellElement>) {
-  return <th className={cn("h-11 px-4 text-left align-middle text-xs font-semibold uppercase tracking-wider text-muted-foreground", className)} {...props} />;
+  return <th className={cn("h-11 px-3 text-left align-middle text-xs font-semibold uppercase tracking-wider text-muted-foreground sm:px-4", className)} {...props} />;
 }
 
 export function TableCell({ className, ...props }: React.TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-3.5 align-middle text-card-foreground", className)} {...props} />;
+  return <td className={cn("min-w-0 break-words px-3 py-3.5 align-middle text-card-foreground sm:px-4", className)} {...props} />;
 }

@@ -9,7 +9,7 @@ import type { Profile } from "@/lib/types";
 
 export function AppShell({ children, profile }: { children: ReactNode; profile: Profile }) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen w-full overflow-x-clip">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground">
         Lewati ke konten
       </a>
@@ -39,7 +39,7 @@ export function AppShell({ children, profile }: { children: ReactNode; profile: 
         </form>
       </aside>
 
-      <div className="dashboard-shell-content lg:pl-72">
+      <div className="dashboard-shell-content min-w-0 lg:pl-72">
         <header className="no-print sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-border/70 bg-background/80 px-4 shadow-[0_8px_28px_-12px_hsl(var(--primary)/0.18)] backdrop-blur-xl supports-[backdrop-filter]:bg-background/70 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <Link
@@ -63,7 +63,7 @@ export function AppShell({ children, profile }: { children: ReactNode; profile: 
             </Button>
           </form>
         </header>
-        <main id="main-content" className="app-page mx-auto min-h-[calc(100vh-4rem)] w-full max-w-7xl px-3 py-4 pb-32 sm:px-4 sm:py-5 lg:px-8 lg:py-7">{children}</main>
+        <main id="main-content" className="app-page mx-auto min-h-[calc(100vh-4rem)] w-full max-w-7xl overflow-x-clip px-3 py-4 pb-32 sm:px-4 sm:py-5 lg:px-8 lg:py-7">{children}</main>
       </div>
 
       <div className="no-print">

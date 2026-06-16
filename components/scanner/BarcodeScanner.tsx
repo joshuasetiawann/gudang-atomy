@@ -20,12 +20,12 @@ type ScanResult = {
 
 const backCameraPattern = /(back|rear|environment|belakang)/i;
 const scannerOptions = {
-  delayBetweenScanAttempts: 80,
-  delayBetweenScanSuccess: 400,
+  delayBetweenScanAttempts: 35,
+  delayBetweenScanSuccess: 250,
   tryPlayVideoTimeout: 5000
 };
 const scannerHints = new Map<DecodeHintType, unknown>([
-  [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128, BarcodeFormat.QR_CODE]],
+  [DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.CODE_128]],
   [DecodeHintType.TRY_HARDER, true]
 ]);
 
@@ -38,8 +38,8 @@ function cameraConstraints() {
     audio: false,
     video: {
       facingMode: { ideal: "environment" },
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
       focusMode: "continuous",
       advanced: [{ focusMode: "continuous" }]
     }
@@ -137,7 +137,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
           </span>
           Scan barcode box
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">Gunakan kamera atau masukkan kode barcode manual.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Arahkan kamera ke barcode garis atau masukkan nomor box manual.</p>
       </div>
       <div className="group relative overflow-hidden rounded-lg border bg-slate-950 shadow-inner">
         <video ref={videoRef} className="aspect-square w-full object-cover sm:aspect-[4/3]" muted playsInline />
@@ -214,7 +214,7 @@ export function BarcodeScanner({ onDetected }: { onDetected: (value: string) => 
         <Input
           value={manualValue}
           onChange={(event) => setManualValue(event.target.value)}
-          placeholder="ATMY_BOX:BOX-YYYYMMDD-000001:XXXX"
+          placeholder="BOX-YYYYMMDD-000001 / GK-KARDUS-000001"
           className="min-w-0 font-mono text-xs sm:text-sm"
         />
         <Button className="w-full sm:w-auto" type="submit" variant="secondary">

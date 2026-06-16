@@ -298,7 +298,7 @@ function ResiLabelCard({
         </div>
 
         <div className="mt-auto pt-3">
-          <div className="h-14 w-full">
+          <div className="h-20 w-full">
             <Barcode value={label.id_box} />
           </div>
           <p className="mt-1 break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.id_box}</p>

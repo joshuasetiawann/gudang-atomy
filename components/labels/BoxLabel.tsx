@@ -32,7 +32,7 @@ export function BoxLabel({ box }: { box: LabelBox }) {
           <Row label="Lokasi" value={box.location_code ?? "-"} mono />
         </div>
         <div className="mt-5">
-          <div className="h-20 w-full">
+          <div className="h-24 w-full">
             <Barcode value={box.id_box} />
           </div>
         </div>

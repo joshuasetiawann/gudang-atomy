@@ -27,7 +27,7 @@ export default async function BarangMasukSuccessPage({ params }: { params: Promi
         <PageHeader
           kicker="Receiving Complete"
           title="Barang Masuk Berhasil"
-          description="Box berhasil dibuat. Cetak label QR atau buka detail box."
+          description="Box berhasil dibuat. Cetak label barcode atau buka detail box."
           action={
             <Button asChild variant="outline">
               <Link href={`/boxes/${box.id}`}>Detail box</Link>
@@ -50,10 +50,10 @@ export default async function BarangMasukSuccessPage({ params }: { params: Promi
       </Card>
       <Card className="no-print">
         <CardHeader>
-          <CardTitle>Barcode value</CardTitle>
+          <CardTitle>Nomor barcode</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="break-all rounded-md border bg-background/65 p-3 font-mono text-sm tabular-nums text-foreground shadow-soft">{box.barcode_value}</p>
+          <p className="break-all rounded-md border bg-background/65 p-3 font-mono text-sm tabular-nums text-foreground shadow-soft">{box.id_box}</p>
         </CardContent>
       </Card>
       <BoxLabel box={box} />

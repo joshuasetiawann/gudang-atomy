@@ -299,9 +299,9 @@ function ResiLabelCard({
 
         <div className="mt-auto pt-3">
           <div className="h-14 w-full">
-            <Barcode value={label.barcode_value} />
+            <Barcode value={label.id_box} />
           </div>
-          <p className="mt-1 break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.barcode_value}</p>
+          <p className="mt-1 break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.id_box}</p>
         </div>
       </div>
 
@@ -311,9 +311,9 @@ function ResiLabelCard({
           <p className="print-compact-client mt-1 text-center text-[15px] font-bold leading-snug text-slate-950">{label.box_name}</p>
         </div>
         <div className="print-compact-barcode h-16 w-full">
-          <Barcode value={label.barcode_value} />
+          <Barcode value={label.id_box} />
         </div>
-        <p className="break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.barcode_value}</p>
+        <p className="break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.id_box}</p>
       </div>
     </article>
   );

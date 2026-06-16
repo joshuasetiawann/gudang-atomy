@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 import { Printer } from "lucide-react";
+import { Barcode } from "@/components/labels/Barcode";
 import { Button } from "@/components/ui/button";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -19,12 +18,6 @@ type LabelBox = {
 };
 
 export function BoxLabel({ box }: { box: LabelBox }) {
-  const [qrUrl, setQrUrl] = useState("");
-
-  useEffect(() => {
-    QRCode.toDataURL(box.barcode_value, { margin: 1, width: 280 }).then(setQrUrl);
-  }, [box.barcode_value]);
-
   return (
     <div className="space-y-4">
       <div className="print-page w-full max-w-md rounded-lg border bg-white p-5 text-slate-950 shadow-soft">
@@ -38,15 +31,12 @@ export function BoxLabel({ box }: { box: LabelBox }) {
           <Row label="Expired" value={formatDate(box.expired_at)} mono />
           <Row label="Lokasi" value={box.location_code ?? "-"} mono />
         </div>
-        <div className="mt-5 flex justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {qrUrl ? (
-            <img src={qrUrl} alt={box.barcode_value} className="h-52 w-52 rounded-sm" />
-          ) : (
-            <div className="skeleton-shimmer h-52 w-52 rounded-md bg-muted" />
-          )}
+        <div className="mt-5">
+          <div className="h-20 w-full">
+            <Barcode value={box.id_box} />
+          </div>
         </div>
-        <p className="mt-3 break-all text-center font-mono text-xs tracking-tight">{box.barcode_value}</p>
+        <p className="mt-2 break-all text-center font-mono text-xs tracking-tight">{box.id_box}</p>
       </div>
       <Button type="button" className="no-print w-full sm:w-auto" onClick={() => window.print()}>
         <Printer className="h-4 w-4" />

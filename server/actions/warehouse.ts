@@ -441,18 +441,24 @@ export async function receiveBoxAction(_state: ActionState, formData: FormData):
 export async function lookupBoxByBarcodeAction(barcodeValue: string): Promise<ActionState> {
   await requireRole(["super_admin", "admin_gudang"]);
   const supabase = await createClient();
-  const value = barcodeValue.trim();
+  const value = barcodeValue.replace(/\s+/g, "").trim().toUpperCase();
+  const isFullBarcode = isValidBarcodeValue(value);
+  const isBoxIdentifier = /^[A-Z0-9][A-Z0-9-]{1,80}$/.test(value);
 
-  if (!isValidBarcodeValue(value)) {
+  if (!isFullBarcode && !isBoxIdentifier) {
     await insertScanLog(value, "invalid", "Format barcode tidak valid");
     return fail("Format barcode tidak valid.");
   }
 
-  const { data: box, error } = await supabase
+  let query = supabase
     .from("boxes")
-    .select("*, owners(owner_code, owner_name), box_items(*, products(sku, product_name, unit))")
-    .eq("barcode_value", value)
-    .single();
+    .select("*, owners(owner_code, owner_name), box_items(*, products(sku, product_name, unit))");
+
+  query = isFullBarcode
+    ? query.eq("barcode_value", value)
+    : query.or(`id_box.eq.${value},pemilik_id_box.eq.${value}`);
+
+  const { data: box, error } = await query.single();
 
   if (error || !box) {
     await insertScanLog(value, "not_found", "Barcode tidak ditemukan");

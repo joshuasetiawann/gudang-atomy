@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 
 const QUIET_ZONE = 10; // modul kosong di kiri/kanan (quiet zone) agar mudah discan
 
-// Render `value` sebagai barcode 1D (Code 128) berupa garis. Nilai yang
-// di-encode sama persis dengan barcode_value, jadi scanner & database tidak
-// berubah — hanya tampilannya yang jadi garis, bukan QR.
+// Render `value` sebagai barcode 1D (Code 128) berupa garis.
+// Untuk label box, value sengaja memakai id_box yang lebih pendek agar garis
+// tidak terlalu rapat dan kamera HP lebih mudah membaca.
 export function Barcode({
   value,
   className,

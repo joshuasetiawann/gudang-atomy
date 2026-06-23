@@ -1,29 +1,36 @@
+import { BoxEditor } from "@/components/forms/BoxEditor";
 import { BoxLabel } from "@/components/labels/BoxLabel";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { StatusBadge } from "@/components/tables/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getCurrentProfile } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { isUuidValue } from "@/lib/validation/uuid";
-import type { BoxStatus } from "@/lib/types";
+import type { BoxStatus, Product } from "@/lib/types";
 
 export default async function BoxDetailPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   const { id } = await params;
   if (!isUuidValue(id)) return <p className="text-sm text-muted-foreground">Box tidak ditemukan.</p>;
 
+  const profile = await getCurrentProfile();
   const supabase = await createClient();
-  const [boxResult, movementResult] = await Promise.all([
+  const [boxResult, movementResult, productsResult] = await Promise.all([
     supabase.from("boxes").select("*, owners(owner_code, owner_name), box_items(*, products(sku, product_name, unit))").eq("id", id).single(),
     supabase
       .from("stock_movements")
       .select("movement_type, qty, before_qty, after_qty, created_at, reason, notes, products(sku, product_name)")
       .eq("box_id", id)
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase.from("products").select("*").eq("is_active", true).order("product_name")
   ]);
   const box = boxResult.data as unknown as BoxDetail | null;
   const movements = (movementResult.data ?? []) as unknown as BoxMovement[];
+  const products = (productsResult.data ?? []) as Product[];
+  const canEdit = profile.role === "super_admin" || profile.role === "admin_gudang";
+  const canDelete = profile.role === "super_admin";
 
   if (!box) {
     return <EmptyState title="Box tidak ditemukan" description="ID box tidak valid atau sudah dihapus." />;
@@ -59,45 +66,70 @@ export default async function BoxDetailPage({ params }: { params: Promise<{ id: 
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Isi produk</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>SKU</TableHead>
-                <TableHead>Produk</TableHead>
-                <TableHead className="text-right">Qty awal</TableHead>
-                <TableHead className="text-right">Qty sisa</TableHead>
-                <TableHead>Expired</TableHead>
-                <TableHead>Batch</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {box.box_items.length ? (
-                box.box_items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-mono text-foreground">{item.products?.sku ?? "-"}</TableCell>
-                    <TableCell className="font-medium">{item.products?.product_name ?? item.product_id}</TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">{item.qty_initial}</TableCell>
-                    <TableCell className="text-right font-semibold tabular-nums text-foreground">{item.qty_available}</TableCell>
-                    <TableCell className="font-mono tabular-nums text-muted-foreground">{formatDate(item.expired_at)}</TableCell>
-                    <TableCell className="font-mono">{item.batch_no ?? <span className="text-muted-foreground">-</span>}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
+      {canEdit ? (
+        <BoxEditor
+          key={`${box.box_name}|${box.location_code ?? ""}|${box.expired_at ?? ""}|${box.notes ?? ""}|${box.box_items
+            .map((item) => `${item.id}:${item.qty_available}:${item.expired_at ?? ""}:${item.batch_no ?? ""}`)
+            .join(",")}`}
+          box={{
+            id: box.id,
+            box_name: box.box_name,
+            expired_at: box.expired_at,
+            location_code: box.location_code,
+            notes: box.notes,
+            status: box.status
+          }}
+          items={box.box_items.map((item) => ({
+            id: item.id,
+            product_id: item.product_id,
+            qty_available: item.qty_available,
+            expired_at: item.expired_at,
+            batch_no: item.batch_no
+          }))}
+          products={products}
+          canDelete={canDelete}
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Isi produk</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                    Belum ada produk di dalam box ini.
-                  </TableCell>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Produk</TableHead>
+                  <TableHead className="text-right">Qty awal</TableHead>
+                  <TableHead className="text-right">Qty sisa</TableHead>
+                  <TableHead>Expired</TableHead>
+                  <TableHead>Batch</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {box.box_items.length ? (
+                  box.box_items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-mono text-foreground">{item.products?.sku ?? "-"}</TableCell>
+                      <TableCell className="font-medium">{item.products?.product_name ?? item.product_id}</TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">{item.qty_initial}</TableCell>
+                      <TableCell className="text-right font-semibold tabular-nums text-foreground">{item.qty_available}</TableCell>
+                      <TableCell className="font-mono tabular-nums text-muted-foreground">{formatDate(item.expired_at)}</TableCell>
+                      <TableCell className="font-mono">{item.batch_no ?? <span className="text-muted-foreground">-</span>}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                      Belum ada produk di dalam box ini.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -158,6 +190,7 @@ type BoxDetail = {
   expired_at: string | null;
   location_code: string | null;
   status: BoxStatus;
+  notes: string | null;
   created_by: string | null;
   checked_out_by: string | null;
   created_at: string;

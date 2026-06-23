@@ -8,7 +8,7 @@ import { requireRole } from "@/lib/auth/guards";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { ActionState, BoxItem, BoxRecord, PackageTemplateItem, Product } from "@/lib/types";
-import { ownerSchema, packageSchema, partialCheckoutSchema, productSchema, receiveBoxSchema } from "@/lib/validation/schemas";
+import { editBoxSchema, ownerSchema, packageSchema, partialCheckoutSchema, productSchema, receiveBoxSchema } from "@/lib/validation/schemas";
 import { isUuidValue } from "@/lib/validation/uuid";
 
 const ok = (message: string, extra: Partial<ActionState> = {}): ActionState => ({ ok: true, message, ...extra });
@@ -537,6 +537,173 @@ export async function voidBoxAction(_state: ActionState, formData: FormData): Pr
   revalidatePath("/boxes");
   revalidatePath(`/boxes/${boxId}`);
   return ok("Box berhasil di-void.");
+}
+
+export async function updateBoxAction(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const profile = await requireRole(["super_admin", "admin_gudang"]);
+  const supabase = await createClient();
+  const idResult = formUuid(formData, "id", "ID box");
+  if (idResult.error) return fail(idResult.error);
+  const id = idResult.value;
+
+  const rawItems = parseJsonArray<{ id?: string; product_id: string; qty: number; expired_at?: string; batch_no?: string }>(formData.get("items_json"));
+  const parsed = editBoxSchema.safeParse({
+    box_name: text(formData, "box_name"),
+    expired_at: text(formData, "expired_at"),
+    location_code: text(formData, "location_code"),
+    notes: text(formData, "notes"),
+    items: rawItems
+  });
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Data box tidak valid.");
+
+  const keyOf = (item: { product_id: string; expired_at?: string; batch_no?: string }) =>
+    `${item.product_id}|${nullable(item.expired_at) ?? ""}|${nullable(item.batch_no) ?? ""}`;
+  const keys = parsed.data.items.map(keyOf);
+  if (new Set(keys).size !== keys.length) return fail("Produk dengan expired & batch yang sama tidak boleh dobel dalam satu box.");
+
+  const { data: box, error: boxError } = await supabase.from("boxes").select("id, owner_id, status").eq("id", id).single();
+  if (boxError || !box) return fail(errorMessage(boxError, "Box tidak ditemukan."));
+  if (box.status === "void") return fail("Box yang sudah void tidak bisa diedit.");
+
+  const { data: currentRaw, error: itemsError } = await supabase
+    .from("box_items")
+    .select("id, product_id, qty_initial, qty_available, expired_at, batch_no")
+    .eq("box_id", id);
+  if (itemsError) return fail(errorMessage(itemsError, "Isi box gagal dibaca."));
+  const currentItems = (currentRaw ?? []) as Array<{ id: string; product_id: string; qty_initial: number; qty_available: number; expired_at: string | null; batch_no: string | null }>;
+  const currentById = new Map(currentItems.map((item) => [item.id, item]));
+
+  const { error: detailError } = await supabase
+    .from("boxes")
+    .update({
+      box_name: parsed.data.box_name,
+      expired_at: nullable(parsed.data.expired_at),
+      location_code: nullable(parsed.data.location_code),
+      notes: nullable(parsed.data.notes)
+    })
+    .eq("id", id);
+  if (detailError) return fail(errorMessage(detailError, "Rincian box gagal diupdate."));
+
+  const toUpdate = parsed.data.items.filter((item) => item.id && currentById.has(item.id));
+  const toInsert = parsed.data.items.filter((item) => !item.id || !currentById.has(item.id));
+  const keptIds = new Set(toUpdate.map((item) => item.id as string));
+  const removed = currentItems.filter((item) => !keptIds.has(item.id));
+
+  const movements: Array<{ product_id: string; qty: number; before_qty: number; after_qty: number }> = [];
+
+  if (removed.length) {
+    let admin;
+    try {
+      admin = createAdminClient();
+    } catch {
+      return fail("Menghapus baris isi box butuh konfigurasi server (service role key).");
+    }
+    const { error: deleteError } = await admin.from("box_items").delete().in("id", removed.map((item) => item.id));
+    if (deleteError) return fail(errorMessage(deleteError, "Baris produk gagal dihapus."));
+    removed.forEach((item) => {
+      if (Number(item.qty_available) > 0) {
+        movements.push({ product_id: item.product_id, qty: Number(item.qty_available), before_qty: Number(item.qty_available), after_qty: 0 });
+      }
+    });
+  }
+
+  for (const item of toUpdate) {
+    const current = currentById.get(item.id as string);
+    if (!current) continue;
+    const newQty = Number(item.qty);
+    const { error: updateError } = await supabase
+      .from("box_items")
+      .update({
+        qty_available: newQty,
+        qty_initial: Math.max(Number(current.qty_initial), newQty),
+        expired_at: nullable(item.expired_at),
+        batch_no: nullable(item.batch_no)
+      })
+      .eq("id", item.id as string);
+    if (updateError) return fail(errorMessage(updateError, "Isi box gagal diupdate."));
+    if (newQty !== Number(current.qty_available)) {
+      movements.push({ product_id: current.product_id, qty: Math.abs(newQty - Number(current.qty_available)), before_qty: Number(current.qty_available), after_qty: newQty });
+    }
+  }
+
+  if (toInsert.length) {
+    const { error: insertError } = await supabase.from("box_items").insert(
+      toInsert.map((item) => ({
+        box_id: id,
+        product_id: item.product_id,
+        qty_initial: Number(item.qty),
+        qty_available: Number(item.qty),
+        expired_at: nullable(item.expired_at),
+        batch_no: nullable(item.batch_no)
+      }))
+    );
+    if (insertError) return fail(errorMessage(insertError, "Produk baru gagal ditambahkan."));
+    toInsert.forEach((item) => movements.push({ product_id: item.product_id, qty: Number(item.qty), before_qty: 0, after_qty: Number(item.qty) }));
+  }
+
+  if (movements.length) {
+    const { error: movementError } = await supabase.from("stock_movements").insert(
+      movements.map((movement) => ({
+        movement_type: "adjustment",
+        box_id: id,
+        owner_id: box.owner_id,
+        product_id: movement.product_id,
+        qty: movement.qty,
+        before_qty: movement.before_qty,
+        after_qty: movement.after_qty,
+        actor_user_id: profile.id,
+        reason: "Edit isi box"
+      }))
+    );
+    if (movementError) return fail(errorMessage(movementError, "Riwayat penyesuaian gagal disimpan."));
+  }
+
+  const { data: remainingRaw } = await supabase.from("box_items").select("qty_available").eq("box_id", id);
+  const totalAvailable = ((remainingRaw ?? []) as Array<{ qty_available: number }>).reduce((sum, item) => sum + Number(item.qty_available), 0);
+  const nextStatus = totalAvailable <= 0 ? "empty" : box.status === "partial" ? "partial" : "active";
+  if (nextStatus !== box.status) {
+    const { error: statusError } = await supabase.from("boxes").update({ status: nextStatus }).eq("id", id);
+    if (statusError) return fail(errorMessage(statusError, "Status box gagal diperbarui."));
+  }
+
+  revalidatePath("/boxes");
+  revalidatePath("/dashboard");
+  revalidatePath(`/boxes/${id}`);
+  return ok("Box berhasil diperbarui.");
+}
+
+export async function deleteBoxAction(_state: ActionState, formData: FormData): Promise<ActionState> {
+  await requireRole(["super_admin"]);
+  const supabase = await createClient();
+  const idResult = formUuid(formData, "box_id", "ID box");
+  if (idResult.error) return fail(idResult.error);
+  const boxId = idResult.value;
+
+  const { data: box, error: boxError } = await supabase.from("boxes").select("id").eq("id", boxId).single();
+  if (boxError || !box) return fail(errorMessage(boxError, "Box tidak ditemukan."));
+
+  const { data: itemsRaw, error: itemsError } = await supabase.from("box_items").select("qty_available").eq("box_id", boxId);
+  if (itemsError) return fail(errorMessage(itemsError, "Isi box gagal dibaca."));
+  const totalAvailable = ((itemsRaw ?? []) as Array<{ qty_available: number }>).reduce((sum, item) => sum + Number(item.qty_available), 0);
+  if (totalAvailable > 0) return fail("Box masih berisi stok. Kosongkan atau ambil produknya dulu sebelum dihapus.");
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return fail("Fitur hapus butuh konfigurasi server (service role key).");
+  }
+
+  const { error: scanError } = await admin.from("scan_logs").delete().eq("box_id", boxId);
+  if (scanError) return fail(errorMessage(scanError, "Riwayat scan gagal dihapus."));
+  const { error: movementError } = await admin.from("stock_movements").delete().eq("box_id", boxId);
+  if (movementError) return fail(errorMessage(movementError, "Riwayat stok gagal dihapus."));
+  const { error: deleteError } = await admin.from("boxes").delete().eq("id", boxId);
+  if (deleteError) return fail(errorMessage(deleteError, "Box gagal dihapus."));
+
+  revalidatePath("/boxes");
+  revalidatePath("/dashboard");
+  redirect("/boxes");
 }
 
 export async function exportActiveStockCsvAction(): Promise<ActionState> {

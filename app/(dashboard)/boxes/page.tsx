@@ -21,7 +21,9 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
     .order("created_at", { ascending: false })
     .limit(1000);
   if (search) query = query.or(`id_box.ilike.%${search}%,box_name.ilike.%${search}%`);
-  if (params.status && params.status !== "__all") {
+  if (params.status === "__empty") {
+    query = query.eq("total_product_types", 0);
+  } else if (params.status && params.status !== "__all") {
     query = query.eq("status", params.status);
   } else if (params.status !== "__all") {
     query = query.gt("total_product_types", 0);
@@ -68,6 +70,7 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
                 className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none transition-all focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <option value="">Box berisi produk</option>
+                <option value="__empty">Tanpa isi (kosong)</option>
                 <option value="__all">Semua status</option>
                 <option value="active">active</option>
                 <option value="partial">partial</option>

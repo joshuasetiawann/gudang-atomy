@@ -68,6 +68,24 @@ export const receiveBoxSchema = z
   .refine((data) => data.source_type === "custom" || Boolean(data.package_id), "Paket wajib dipilih")
   .refine((data) => data.source_type === "custom" || data.package_qty > 0, "Jumlah paket harus lebih dari 0");
 
+export const editBoxSchema = z.object({
+  box_name: z.string().trim().min(1, "Nama box wajib diisi"),
+  expired_at: z.string().trim().optional(),
+  location_code: z.string().trim().optional(),
+  notes: z.string().trim().optional(),
+  items: z
+    .array(
+      z.object({
+        id: optionalUuidSchema("Item box tidak valid. Muat ulang halaman lalu coba lagi."),
+        product_id: productIdSchema,
+        qty: z.coerce.number().positive("Qty harus lebih dari 0"),
+        expired_at: z.string().trim().optional(),
+        batch_no: z.string().trim().optional()
+      })
+    )
+    .default([])
+});
+
 export const barcodeSchema = z.string().trim().refine(isValidBarcodeValue, "Format barcode tidak valid");
 
 export const partialCheckoutSchema = z.object({

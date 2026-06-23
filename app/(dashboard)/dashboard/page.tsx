@@ -4,12 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, jakartaTodayUtcRange } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayRange = jakartaTodayUtcRange();
   const in30Days = new Date();
   in30Days.setDate(in30Days.getDate() + 30);
 
@@ -21,7 +20,9 @@ export default async function DashboardPage() {
     supabase.from("boxes").select("id", { count: "exact", head: true }).eq("status", "taken"),
     supabase.from("v_active_stock").select("qty_available"),
     supabase.from("boxes").select("id", { count: "exact", head: true }).in("status", ["active", "partial"]).lte("expired_at", in30Days.toISOString().slice(0, 10)),
-    supabase.from("stock_movements").select("id", { count: "exact", head: true }).gte("created_at", today.toISOString()),
+    todayRange
+      ? supabase.from("stock_movements").select("id", { count: "exact", head: true }).gte("created_at", todayRange.startIso).lte("created_at", todayRange.endIso)
+      : supabase.from("stock_movements").select("id", { count: "exact", head: true }),
     supabase
       .from("stock_movements")
       .select("movement_type, qty, created_at, boxes(id_box, box_name), products(sku, product_name)")

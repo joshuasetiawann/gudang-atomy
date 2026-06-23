@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { createClient } from "@/lib/supabase/server";
-import { formatDateTime } from "@/lib/utils";
+import { formatDateTime, jakartaDateToUtcRange } from "@/lib/utils";
 
 const movementBadgeVariant: Record<string, BadgeProps["variant"]> = {
   in: "active",
@@ -27,8 +27,10 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
     .order("created_at", { ascending: false })
     .limit(200);
   if (params.type) query = query.eq("movement_type", params.type);
-  if (params.date_from) query = query.gte("created_at", `${params.date_from}T00:00:00`);
-  if (params.date_to) query = query.lte("created_at", `${params.date_to}T23:59:59`);
+  const fromRange = params.date_from ? jakartaDateToUtcRange(params.date_from) : null;
+  const toRange = params.date_to ? jakartaDateToUtcRange(params.date_to) : null;
+  if (fromRange) query = query.gte("created_at", fromRange.startIso);
+  if (toRange) query = query.lte("created_at", toRange.endIso);
   const { data } = await query;
 
   return (

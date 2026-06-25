@@ -20,8 +20,8 @@
 --   created_at     = kolom "Waktu" saat box disortir (WIB / +07)
 --
 -- CATATAN DATA:
---   • BSTR-EOP-0005  -> HILANG. Urutan EOP loncat 0004 → 0006.
---                       Template insert-nya ada di bagian paling bawah (di-comment).
+--   • BSTR-EOP-0005  -> dulu kosong; sekarang ADA datanya, di-import lewat file terpisah
+--                       bstr_kantor_bunda_import.sql (lokasi Kantor Bunda, 7 pcs).
 --   • BSTR-HEMO-0009 -> DOBEL di data asli (baris 33 & 35). Karena id_box WAJIB UNIK, box ke-2
 --                       diberi kode BSTR-HEMO-0009-2 supaya 2-2nya benar tersimpan → total 50 box.
 -- =====================================================================
@@ -143,24 +143,6 @@ group by p.product_name
 order by p.product_name;
 
 -- =====================================================================
--- TEMPLATE — BSTR-EOP-0005 (data hilang). Lengkapi qty & exp lalu jalankan.
+-- BSTR-EOP-0005 sekarang ADA datanya → di-import lewat file terpisah:
+--   supabase/seed/bstr_kantor_bunda_import.sql  (lokasi Kantor Bunda, 7 pcs)
 -- =====================================================================
--- with own as (
---   select id, owner_code from public.owners where lower(owner_name)='bunda' limit 1
--- ),
--- new_box as (
---   insert into public.boxes (id_box, pemilik_id_box, barcode_value, box_name,
---     owner_id, source_type, package_qty, expired_at, location_code, status)
---   select 'BSTR-EOP-0005', o.owner_code || '-BSTR-EOP-0005',
---          public.build_box_barcode_value('BSTR-EOP-0005'),
---          'Atomy Ethereal Oil Patch',
---          o.id, 'custom', 0, date '2029-01-18', 'GUDANG KAPUK', 'active'
---   from own o
---   on conflict (id_box) do nothing
---   returning id
--- )
--- insert into public.box_items (box_id, product_id, qty_initial, qty_available, expired_at)
--- select nb.id, p.id, /*QTY*/ 8, /*QTY*/ 8, date '2029-01-18'
--- from new_box nb, public.products p
--- where p.sku = 'ATM-EOP'
--- on conflict (box_id, product_id, expired_at, batch_no) do nothing;

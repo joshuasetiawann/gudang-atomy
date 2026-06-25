@@ -11,7 +11,7 @@ export default async function ProductsPage() {
 
   return (
     <div className="app-page space-y-6">
-      <PageHeader kicker="Master Data" title="Products" description="Master produk Atomy dan komponen paket GudangKu." />
+      <PageHeader kicker="Data Master" title="Produk" description="Master produk Atomy dan komponen paket GudangKu." />
       <ProductManager products={data ?? []} canEdit={canEdit} />
     </div>
   );

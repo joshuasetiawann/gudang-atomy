@@ -17,7 +17,7 @@ export default async function BarangMasukPage() {
 
   return (
     <div className="app-page space-y-6">
-      <PageHeader kicker="Receiving" title="Barang Masuk" description="Input box baru, generate ID, dan cetak label QR." />
+      <PageHeader kicker="Penerimaan" title="Barang Masuk" description="Buat box baru, hasilkan ID, dan cetak label QR." />
       {!canEdit ? (
         <Alert className="animate-rise flex items-start gap-3 border-warning/30 bg-warning/10">
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-warning/15 text-warning ring-1 ring-warning/25">

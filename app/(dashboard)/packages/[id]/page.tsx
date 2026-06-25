@@ -26,7 +26,7 @@ export default async function PackageDetailPage({ params }: { params: Promise<{ 
   return (
     <div className="app-page space-y-6">
       <PageHeader
-        kicker="Package Detail"
+        kicker="Detail Paket"
         title={pkgResult.data.package_name}
         description={pkgResult.data.package_code}
       />

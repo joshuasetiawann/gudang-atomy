@@ -35,9 +35,9 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
   return (
     <div className="app-page space-y-6">
       <PageHeader
-        kicker="Inventory Boxes"
+        kicker="Box Inventori"
         title="Data Box"
-        description="Daftar box dengan filter status, owner, dan lokasi."
+        description="Daftar box dengan filter status, pemilik, dan lokasi."
         action={
           <div className="inline-flex items-center gap-2 rounded-md border bg-background/80 px-3 py-2 text-sm font-medium text-muted-foreground shadow-soft">
             <span className="text-base font-semibold tabular-nums text-foreground">{(data ?? []).length}</span>

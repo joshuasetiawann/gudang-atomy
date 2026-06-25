@@ -39,7 +39,7 @@ export default async function BoxDetailPage({ params }: { params: Promise<{ id: 
   return (
     <div className="app-page space-y-6">
       <PageHeader
-        kicker="Box Detail"
+        kicker="Detail Box"
         title={box.box_name}
         description={`ID Box App: ${box.id_box}`}
         action={<StatusBadge status={box.status as BoxStatus} />}

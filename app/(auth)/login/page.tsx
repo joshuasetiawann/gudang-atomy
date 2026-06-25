@@ -13,6 +13,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <div className="relative z-10 w-full max-w-md">
         <LoginForm next={params.next ?? "/dashboard"} />
         <p className="mt-6 text-center text-xs font-medium text-muted-foreground">Gudang Atomy · Manajemen gudang berbasis QR</p>
+        <p className="mt-1.5 text-center text-xs text-muted-foreground">Hak cipta © {new Date().getFullYear()} Joshua Setiawan</p>
       </div>
     </main>
   );

@@ -63,7 +63,12 @@ export function AppShell({ children, profile }: { children: ReactNode; profile: 
             </Button>
           </form>
         </header>
-        <main id="main-content" className="app-page mx-auto min-h-[calc(100vh-4rem)] w-full max-w-7xl overflow-x-clip px-3 py-4 pb-32 sm:px-4 sm:py-5 lg:px-8 lg:py-7">{children}</main>
+        <main id="main-content" className="app-page mx-auto min-h-[calc(100vh-4rem)] w-full max-w-7xl overflow-x-clip px-3 py-4 pb-32 sm:px-4 sm:py-5 lg:px-8 lg:py-7">
+          {children}
+          <footer className="no-print mt-10 border-t border-border/60 pt-4 text-center text-xs text-muted-foreground">
+            Hak cipta © {new Date().getFullYear()} Joshua Setiawan. Seluruh hak cipta dilindungi.
+          </footer>
+        </main>
       </div>
 
       <div className="no-print">

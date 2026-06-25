@@ -23,18 +23,18 @@ import { cn } from "@/lib/utils";
 import type { UserRole } from "@/lib/types";
 
 const navigation = [
-  { href: "/dashboard", label: "Dashboard", shortLabel: "Home", icon: Home },
+  { href: "/dashboard", label: "Beranda", shortLabel: "Beranda", icon: Home },
   { href: "/barang-masuk", label: "Barang Masuk", shortLabel: "Masuk", icon: PackagePlus },
   { href: "/ambil-barang", label: "Ambil Barang", shortLabel: "Ambil", icon: ScanLine },
   { href: "/boxes", label: "Data Box", shortLabel: "Box", icon: Boxes },
-  { href: "/print-resi", label: "Print Resi", shortLabel: "Print", icon: Printer },
-  { href: "/owners", label: "Owners", shortLabel: "Owner", icon: Users },
-  { href: "/products", label: "Products", shortLabel: "Produk", icon: Package },
-  { href: "/packages", label: "Packages", shortLabel: "Paket", icon: Archive },
-  { href: "/movements", label: "Movements", shortLabel: "Mutasi", icon: ClipboardList },
-  { href: "/reports", label: "Reports", shortLabel: "Report", icon: BarChart3 },
-  { href: "/imports", label: "Imports", shortLabel: "Import", icon: Download },
-  { href: "/activity-logs", label: "Activity Log", shortLabel: "Log", icon: History, superOnly: true },
+  { href: "/print-resi", label: "Cetak Resi", shortLabel: "Cetak", icon: Printer },
+  { href: "/owners", label: "Pemilik", shortLabel: "Pemilik", icon: Users },
+  { href: "/products", label: "Produk", shortLabel: "Produk", icon: Package },
+  { href: "/packages", label: "Paket", shortLabel: "Paket", icon: Archive },
+  { href: "/movements", label: "Pergerakan Stok", shortLabel: "Mutasi", icon: ClipboardList },
+  { href: "/reports", label: "Laporan", shortLabel: "Laporan", icon: BarChart3 },
+  { href: "/imports", label: "Impor", shortLabel: "Impor", icon: Download },
+  { href: "/activity-logs", label: "Log Aktivitas", shortLabel: "Log", icon: History, superOnly: true },
   { href: "/admin-users", label: "Admin", shortLabel: "Admin", icon: ShieldCheck, superOnly: true }
 ];
 

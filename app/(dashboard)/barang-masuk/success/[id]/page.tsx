@@ -25,7 +25,7 @@ export default async function BarangMasukSuccessPage({ params }: { params: Promi
     <div className="app-page space-y-6">
       <div className="no-print">
         <PageHeader
-          kicker="Receiving Complete"
+          kicker="Penerimaan Selesai"
           title="Barang Masuk Berhasil"
           description="Box berhasil dibuat. Cetak label barcode atau buka detail box."
           action={

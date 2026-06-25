@@ -145,7 +145,7 @@ function InfoCard({ icon: Icon, title, description }: { icon: typeof Activity; t
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
           <Icon className="h-5 w-5" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 md:pt-1.5">
           <p className="font-semibold text-card-foreground">{title}</p>
           <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p>
         </div>

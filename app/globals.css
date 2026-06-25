@@ -108,6 +108,13 @@ button {
   animation: rise-in 300ms ease-out both;
 }
 
+/* Dialogs center themselves with translate(-50%, -50%); a plain rise animation
+   would overwrite that transform and knock the modal off-center. This keeps the
+   centering offset baked into every keyframe. */
+.animate-dialog {
+  animation: dialog-in 220ms ease-out both;
+}
+
 .surface-panel {
   background:
     linear-gradient(180deg, hsl(var(--card) / 0.97), hsl(var(--card) / 0.92)),
@@ -186,6 +193,18 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 8px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
   }
 }
 

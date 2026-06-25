@@ -22,9 +22,8 @@
 -- CATATAN DATA:
 --   • BSTR-EOP-0005  -> HILANG. Urutan EOP loncat 0004 → 0006.
 --                       Template insert-nya ada di bagian paling bawah (di-comment).
---   • BSTR-HEMO-0009 -> DOBEL di data asli (baris 33 & 35, isinya sama persis). Kedua baris
---                       dipertahankan, TAPI id_box wajib unik → DB hanya simpan 1 box
---                       (baris ke-2 ditolak ON CONFLICT). Efektif 49 box di sistem.
+--   • BSTR-HEMO-0009 -> DOBEL di data asli (baris 33 & 35). Karena id_box WAJIB UNIK, box ke-2
+--                       diberi kode BSTR-HEMO-0009-2 supaya 2-2nya benar tersimpan → total 50 box.
 -- =====================================================================
 
 -- ---- 1) Owner: Bunda -------------------------------------------------
@@ -79,8 +78,8 @@ with src(id_box, sku, qty, expired_at, created_at) as (
     ('BSTR-HEMO-0008', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:28+07'),
     ('BSTR-FZ-0005',   'ATM-FZ',   12, date '2027-12-01', timestamptz '2026-06-24 06:29+07'),
     ('BSTR-HSD-0011',  'ATM-HSD',   8, date '2027-11-01', timestamptz '2026-06-24 06:33+07'),
-    ('BSTR-HEMO-0009', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:36+07'),  -- baris 33
-    ('BSTR-HEMO-0009', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:46+07'),  -- baris 35 (kembar 0009; ditolak ON CONFLICT krn id_box unik)
+    ('BSTR-HEMO-0009',   'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:36+07'),  -- baris 33
+    ('BSTR-HEMO-0009-2', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:46+07'),  -- baris 35: kembar 0009 → kode dibedakan jadi -2 supaya 2-2nya tersimpan
     ('BSTR-EOP-0007',  'ATM-EOP',   8, date '2029-01-18', timestamptz '2026-06-24 06:40+07'),
     ('BSTR-HEMO-0010', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:46+07'),
     ('BSTR-HEMO-0011', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:46+07'),

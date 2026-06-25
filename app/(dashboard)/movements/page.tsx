@@ -18,6 +18,51 @@ const movementBadgeVariant: Record<string, BadgeProps["variant"]> = {
   void: "void"
 };
 
+type MovementGroup = {
+  key: string;
+  created_at: string;
+  movement_type: string;
+  id_box: string | null;
+  owner_name: string | null;
+  actor_name: string | null;
+  totalQty: number;
+  items: { key: string; product_name: string; qty: number }[];
+};
+
+// Gabungkan movement yang berasal dari box yang sama dan terjadi dalam satu aksi
+// (box, tipe, dan waktu yang sama) menjadi satu baris — misal "Ambil Semua Box"
+// yang menghasilkan satu movement per produk. Movement tanpa box tetap sendiri-sendiri.
+function groupMovements(rows: any[]): MovementGroup[] {
+  const map = new Map<string, MovementGroup>();
+  for (const row of rows) {
+    const key = row.box_id
+      ? `${row.box_id}|${row.movement_type}|${row.created_at}`
+      : `single|${row.id}`;
+    let group = map.get(key);
+    if (!group) {
+      group = {
+        key,
+        created_at: row.created_at,
+        movement_type: row.movement_type,
+        id_box: row.boxes?.id_box ?? null,
+        owner_name: row.owners?.owner_name ?? null,
+        actor_name: row.profiles?.full_name ?? null,
+        totalQty: 0,
+        items: []
+      };
+      map.set(key, group);
+    }
+    const qty = Number(row.qty) || 0;
+    group.totalQty += qty;
+    group.items.push({
+      key: row.id,
+      product_name: row.products?.product_name ?? "-",
+      qty
+    });
+  }
+  return [...map.values()];
+}
+
 export default async function MovementsPage({ searchParams }: { searchParams: Promise<{ type?: string; date_from?: string; date_to?: string; product?: string; owner?: string }> }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -33,9 +78,11 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
   if (toRange) query = query.lte("created_at", toRange.endIso);
   const { data } = await query;
 
+  const groups = groupMovements(data ?? []);
+
   return (
     <div className="app-page space-y-6">
-      <PageHeader kicker="Audit Trail" title="Movements" description="Riwayat barang masuk, keluar, adjustment, dan void." action={<ExportCsvButton />} />
+      <PageHeader kicker="Jejak Audit" title="Pergerakan Stok" description="Riwayat barang masuk, keluar, penyesuaian, dan pembatalan." action={<ExportCsvButton />} />
       <Card>
         <CardContent className="p-4 sm:p-5">
           <form className="grid items-end gap-4 md:grid-cols-4">
@@ -73,7 +120,7 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
           </form>
         </CardContent>
       </Card>
-      {(data ?? []).length ? (
+      {groups.length ? (
         <Table>
           <TableHeader>
             <TableRow>
@@ -87,19 +134,35 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(data ?? []).map((movement) => (
-              <TableRow key={movement.id}>
-                <TableCell className="whitespace-nowrap font-mono text-[13px] text-muted-foreground">{formatDateTime(movement.created_at)}</TableCell>
+            {groups.map((group) => (
+              <TableRow key={group.key}>
+                <TableCell className="whitespace-nowrap font-mono text-[13px] text-muted-foreground">{formatDateTime(group.created_at)}</TableCell>
                 <TableCell>
-                  <Badge variant={movementBadgeVariant[movement.movement_type] ?? "default"} className="font-mono">
-                    {movement.movement_type}
+                  <Badge variant={movementBadgeVariant[group.movement_type] ?? "default"} className="font-mono">
+                    {group.movement_type}
                   </Badge>
                 </TableCell>
-                <TableCell className="font-mono text-[13px] text-muted-foreground">{movement.boxes?.id_box ?? "-"}</TableCell>
-                <TableCell className="text-foreground">{movement.owners?.owner_name ?? "-"}</TableCell>
-                <TableCell className="font-medium text-foreground">{movement.products?.product_name ?? "-"}</TableCell>
-                <TableCell className="text-right tabular-nums">{movement.qty}</TableCell>
-                <TableCell className="text-muted-foreground">{movement.profiles?.full_name ?? "-"}</TableCell>
+                <TableCell className="font-mono text-[13px] text-muted-foreground">{group.id_box ?? "-"}</TableCell>
+                <TableCell className="text-foreground">{group.owner_name ?? "-"}</TableCell>
+                <TableCell className="text-foreground">
+                  {group.items.length > 1 ? (
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium text-muted-foreground">{group.items.length} produk</span>
+                      <ul className="space-y-0.5">
+                        {group.items.map((item) => (
+                          <li key={item.key} className="flex items-baseline justify-between gap-3">
+                            <span className="font-medium">{item.product_name}</span>
+                            <span className="shrink-0 font-mono text-xs text-muted-foreground tabular-nums">×{item.qty}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <span className="font-medium">{group.items[0]?.product_name ?? "-"}</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{group.totalQty}</TableCell>
+                <TableCell className="text-muted-foreground">{group.actor_name ?? "-"}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -107,7 +170,7 @@ export default async function MovementsPage({ searchParams }: { searchParams: Pr
       ) : (
         <Card>
           <CardContent className="p-4">
-            <EmptyState title="Belum ada movement" description="Riwayat akan terisi setelah barang masuk atau keluar." />
+            <EmptyState title="Belum ada pergerakan" description="Riwayat akan terisi setelah barang masuk atau keluar." />
           </CardContent>
         </Card>
       )}

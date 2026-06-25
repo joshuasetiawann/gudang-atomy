@@ -682,11 +682,8 @@ export async function deleteBoxAction(_state: ActionState, formData: FormData): 
   const { data: box, error: boxError } = await supabase.from("boxes").select("id").eq("id", boxId).single();
   if (boxError || !box) return fail(errorMessage(boxError, "Box tidak ditemukan."));
 
-  const { data: itemsRaw, error: itemsError } = await supabase.from("box_items").select("qty_available").eq("box_id", boxId);
-  if (itemsError) return fail(errorMessage(itemsError, "Isi box gagal dibaca."));
-  const totalAvailable = ((itemsRaw ?? []) as Array<{ qty_available: number }>).reduce((sum, item) => sum + Number(item.qty_available), 0);
-  if (totalAvailable > 0) return fail("Box masih berisi stok. Kosongkan atau ambil produknya dulu sebelum dihapus.");
-
+  // Super admin boleh menghapus box beserta seluruh isinya, walau masih ada stok.
+  // box_items ikut terhapus otomatis lewat ON DELETE CASCADE pada boxes.
   let admin;
   try {
     admin = createAdminClient();
@@ -704,6 +701,90 @@ export async function deleteBoxAction(_state: ActionState, formData: FormData): 
   revalidatePath("/boxes");
   revalidatePath("/dashboard");
   redirect("/boxes");
+}
+
+export async function deleteOwnerAction(_state: ActionState, formData: FormData): Promise<ActionState> {
+  await requireRole(["super_admin"]);
+  const supabase = await createClient();
+  const idResult = formUuid(formData, "id", "ID owner");
+  if (idResult.error) return fail(idResult.error);
+  const ownerId = idResult.value;
+
+  const { data: owner, error: ownerError } = await supabase.from("owners").select("id").eq("id", ownerId).single();
+  if (ownerError || !owner) return fail(errorMessage(ownerError, "Owner tidak ditemukan."));
+
+  // Owner yang masih punya box tidak boleh dihapus supaya inventory tidak ikut hilang tanpa sengaja.
+  const { data: boxes, error: boxesError } = await supabase.from("boxes").select("id").eq("owner_id", ownerId).limit(1);
+  if (boxesError) return fail(errorMessage(boxesError, "Cek box owner gagal."));
+  if (boxes && boxes.length) return fail("Owner ini masih punya box. Hapus atau pindahkan box-nya dulu sebelum owner dihapus.");
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return fail("Fitur hapus butuh konfigurasi server (service role key).");
+  }
+
+  // Lepaskan referensi di riwayat stok (kolom nullable) supaya FK tidak memblokir penghapusan,
+  // sekaligus menjaga histori movement tetap ada.
+  const { error: movementError } = await admin.from("stock_movements").update({ owner_id: null }).eq("owner_id", ownerId);
+  if (movementError) return fail(errorMessage(movementError, "Riwayat stok owner gagal dilepas."));
+
+  const { error: deleteError } = await admin.from("owners").delete().eq("id", ownerId);
+  if (deleteError) return fail(errorMessage(deleteError, "Owner gagal dihapus."));
+
+  revalidatePath("/owners");
+  revalidatePath("/barang-masuk");
+  return ok("Owner berhasil dihapus.");
+}
+
+export async function deleteAdminUserAction(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const actor = await requireRole(["super_admin"]);
+  const supabase = await createClient();
+  const idResult = formUuid(formData, "id", "ID user");
+  if (idResult.error || !idResult.value) return fail(idResult.error ?? "ID user tidak valid.");
+  const userId = idResult.value;
+
+  if (userId === actor.id) return fail("Tidak bisa menghapus akun sendiri.");
+
+  const { data: target, error: targetError } = await supabase.from("profiles").select("id, role").eq("id", userId).single();
+  if (targetError || !target) return fail(errorMessage(targetError, "User tidak ditemukan."));
+
+  if (target.role === "super_admin") {
+    const { count } = await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "super_admin");
+    if ((count ?? 0) <= 1) return fail("Tidak bisa menghapus super admin terakhir.");
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return fail("Fitur hapus butuh konfigurasi server (service role key).");
+  }
+
+  // profiles direferensikan banyak tabel tanpa cascade, jadi lepaskan dulu semua referensinya
+  // sebelum auth user dihapus (penghapusan auth user akan men-cascade baris profiles).
+  const refs: Array<[string, string]> = [
+    ["owners", "created_by"],
+    ["products", "created_by"],
+    ["package_templates", "created_by"],
+    ["boxes", "created_by"],
+    ["boxes", "checked_out_by"],
+    ["stock_movements", "actor_user_id"],
+    ["scan_logs", "actor_user_id"],
+    ["import_batches", "created_by"],
+    ["audit_logs", "actor_user_id"]
+  ];
+  for (const [table, column] of refs) {
+    const { error } = await admin.from(table).update({ [column]: null }).eq(column, userId);
+    if (error) return fail(errorMessage(error, `Referensi ${table} gagal dilepas.`));
+  }
+
+  const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+  if (deleteError) return fail(errorMessage(deleteError, "User Auth gagal dihapus."));
+
+  revalidatePath("/admin-users");
+  return ok("User berhasil dihapus.");
 }
 
 export async function exportActiveStockCsvAction(): Promise<ActionState> {
@@ -911,6 +992,27 @@ export async function updateProfileRoleAction(_state: ActionState, formData: For
   if (error) return fail(errorMessage(error, "Profile user gagal disimpan."));
   revalidatePath("/admin-users");
   return ok("Profile user berhasil disimpan.");
+}
+
+export async function resetUserPasswordAction(_state: ActionState, formData: FormData): Promise<ActionState> {
+  await requireRole(["super_admin"]);
+  const idResult = formUuid(formData, "id", "ID user");
+  if (idResult.error || !idResult.value) return fail(idResult.error ?? "ID user tidak valid.");
+  const userId = idResult.value;
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 6) return fail("Password minimal 6 karakter.");
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return fail("Fitur reset password butuh konfigurasi server (service role key).");
+  }
+
+  const { error } = await admin.auth.admin.updateUserById(userId, { password });
+  if (error) return fail(errorMessage(error, "Password gagal diubah."));
+  revalidatePath("/admin-users");
+  return ok("Password user berhasil diubah.");
 }
 
 export async function createAdminUserAction(_state: ActionState, formData: FormData): Promise<ActionState> {

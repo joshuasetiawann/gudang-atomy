@@ -1,12 +1,16 @@
 "use client";
 
 import { useActionState, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Plus, Save, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Activity, AlertTriangle, CheckCircle2, Eye, EyeOff, KeyRound, Plus, Save, Trash2 } from "lucide-react";
 import {
   createOwnerAction,
   createAdminUserAction,
   createPackageAction,
   createProductAction,
+  deleteAdminUserAction,
+  deleteOwnerAction,
+  resetUserPasswordAction,
   updateOwnerAction,
   updatePackageAction,
   updateProductAction,
@@ -14,16 +18,26 @@ import {
 } from "@/server/actions/warehouse";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/ui/empty-state";
-import { roleLabel } from "@/lib/utils";
+import { cn, roleLabel } from "@/lib/utils";
 import type { ActionState, Owner, PackageTemplate, PackageTemplateItem, Product, Profile, UserRole } from "@/lib/types";
 
 const initialState: ActionState = { ok: true, message: "" };
 
-export function OwnerManager({ owners, canEdit }: { owners: Owner[]; canEdit: boolean }) {
+export function OwnerManager({ owners, canEdit, canDelete = false }: { owners: Owner[]; canEdit: boolean; canDelete?: boolean }) {
   const [state, formAction, pending] = useActionState(createOwnerAction, initialState);
 
   return (
@@ -56,13 +70,13 @@ export function OwnerManager({ owners, canEdit }: { owners: Owner[]; canEdit: bo
       ) : null}
 
       <div className="grid gap-3">
-        {owners.length ? owners.map((owner) => <OwnerRow key={owner.id} owner={owner} canEdit={canEdit} />) : <EmptyState title="Belum ada owner" description="Tambahkan pemilik pertama agar barang masuk bisa dibuat." />}
+        {owners.length ? owners.map((owner) => <OwnerRow key={owner.id} owner={owner} canEdit={canEdit} canDelete={canDelete} />) : <EmptyState title="Belum ada owner" description="Tambahkan pemilik pertama agar barang masuk bisa dibuat." />}
       </div>
     </div>
   );
 }
 
-function OwnerRow({ owner, canEdit }: { owner: Owner; canEdit: boolean }) {
+function OwnerRow({ owner, canEdit, canDelete }: { owner: Owner; canEdit: boolean; canDelete: boolean }) {
   const [state, formAction, pending] = useActionState(updateOwnerAction, initialState);
   if (!canEdit) {
     return (
@@ -76,7 +90,7 @@ function OwnerRow({ owner, canEdit }: { owner: Owner; canEdit: boolean }) {
   }
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="space-y-3 p-4">
         <form action={formAction} className="grid items-center gap-3 md:grid-cols-[140px_minmax(180px,1fr)_150px_170px_minmax(180px,1fr)_80px_auto]">
           <input type="hidden" name="id" value={owner.id} />
           <Input name="owner_code" defaultValue={owner.owner_code} className="font-mono" />
@@ -94,6 +108,17 @@ function OwnerRow({ owner, canEdit }: { owner: Owner; canEdit: boolean }) {
           </Button>
           <SubmitMessage state={state} compact className="md:col-span-7" />
         </form>
+        {canDelete ? (
+          <div className="flex justify-end border-t pt-3">
+            <DeleteConfirm
+              action={deleteOwnerAction}
+              id={owner.id}
+              triggerLabel="Hapus owner"
+              title="Hapus owner permanen?"
+              description={`Owner "${owner.owner_name}" akan dihapus permanen. Owner yang masih punya box harus dikosongkan dari box-nya dulu.`}
+            />
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -285,7 +310,7 @@ export function PackageBuilder({
   );
 }
 
-export function AdminUsersManager({ profiles }: { profiles: Profile[] }) {
+export function AdminUsersManager({ profiles, currentUserId }: { profiles: Profile[]; currentUserId: string }) {
   const [state, formAction, pending] = useActionState(createAdminUserAction, initialState);
   return (
     <div className="app-page space-y-5">
@@ -306,7 +331,7 @@ export function AdminUsersManager({ profiles }: { profiles: Profile[] }) {
               <input type="checkbox" name="is_active" defaultChecked className="h-4 w-4 rounded-sm border-input text-primary accent-primary focus-visible:ring-2 focus-visible:ring-ring" />
               Aktif
             </label>
-            <Input name="password" placeholder="Password awal" type="password" minLength={6} required className="md:col-span-2 font-mono" />
+            <PasswordField name="password" placeholder="Password awal (min. 6 karakter)" wrapperClassName="md:col-span-2" />
             <SubmitMessage state={state} />
             <Button disabled={pending} className="md:w-fit">
               <Save className="h-4 w-4" />
@@ -317,17 +342,17 @@ export function AdminUsersManager({ profiles }: { profiles: Profile[] }) {
       </Card>
 
       <div className="grid gap-3">
-        {profiles.length ? profiles.map((profile) => <ProfileRow key={profile.id} profile={profile} />) : <EmptyState title="Belum ada profile" description="Buat user login pertama dari form di atas." />}
+        {profiles.length ? profiles.map((profile) => <ProfileRow key={profile.id} profile={profile} isSelf={profile.id === currentUserId} />) : <EmptyState title="Belum ada profile" description="Buat user login pertama dari form di atas." />}
       </div>
     </div>
   );
 }
 
-function ProfileRow({ profile }: { profile: Profile }) {
+function ProfileRow({ profile, isSelf }: { profile: Profile; isSelf: boolean }) {
   const [state, formAction, pending] = useActionState(updateProfileRoleAction, initialState);
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="space-y-3 p-4">
         <form action={formAction} className="grid items-center gap-3 md:grid-cols-[1fr_1fr_170px_100px]">
           <input type="hidden" name="id" value={profile.id} />
           <Input name="full_name" defaultValue={profile.full_name} required />
@@ -347,8 +372,135 @@ function ProfileRow({ profile }: { profile: Profile }) {
           </Button>
           <SubmitMessage state={state} compact className="md:col-span-4" />
         </form>
+        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+          <Button asChild size="sm" variant="ghost">
+            <Link href={`/activity-logs?actor=${profile.id}`}>
+              <Activity className="h-4 w-4" />
+              Lihat aktivitas
+            </Link>
+          </Button>
+          <PasswordResetDialog userId={profile.id} userName={profile.full_name} />
+          {!isSelf ? (
+            <DeleteConfirm
+              action={deleteAdminUserAction}
+              id={profile.id}
+              triggerLabel="Hapus user"
+              title="Hapus user permanen?"
+              description={`Akun login "${profile.full_name}" akan dihapus permanen beserta akses loginnya. Riwayat aktivitasnya tetap tersimpan tanpa nama pelaku.`}
+            />
+          ) : null}
+        </div>
       </CardContent>
     </Card>
+  );
+}
+
+function PasswordResetDialog({ userId, userName }: { userId: string; userName: string }) {
+  const [state, formAction, pending] = useActionState(resetUserPasswordAction, initialState);
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button type="button" size="sm" variant="outline">
+          <KeyRound className="h-4 w-4" />
+          Reset password
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Reset password</DialogTitle>
+          <DialogDescription>Atur password baru untuk akun &quot;{userName}&quot;.</DialogDescription>
+        </DialogHeader>
+        <form action={formAction} className="space-y-3">
+          <input type="hidden" name="id" value={userId} />
+          <PasswordField name="password" placeholder="Password baru (min. 6 karakter)" />
+          <SubmitMessage state={state} compact />
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Batal
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={pending}>
+              <KeyRound className="h-4 w-4" />
+              {pending ? "Menyimpan..." : "Simpan password"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteConfirm({
+  action,
+  id,
+  triggerLabel,
+  title,
+  description,
+  confirmLabel = "Ya, hapus permanen"
+}: {
+  action: (state: ActionState, formData: FormData) => Promise<ActionState>;
+  id: string;
+  triggerLabel: string;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+}) {
+  const [state, formAction, pending] = useActionState(action, initialState);
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button type="button" size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+            {triggerLabel}
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          <form action={formAction}>
+            <input type="hidden" name="id" value={id} />
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Batal
+                </Button>
+              </DialogClose>
+              <Button type="submit" variant="destructive" disabled={pending}>
+                {pending ? "Menghapus..." : confirmLabel}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {!state.ok && state.message ? (
+        <p role="status" aria-live="polite" className="flex items-center gap-1.5 text-sm font-medium text-destructive">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span>{state.message}</span>
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function PasswordField({ name, placeholder, wrapperClassName }: { name: string; placeholder: string; wrapperClassName?: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className={cn("relative", wrapperClassName)}>
+      <Input name={name} type={show ? "text" : "password"} placeholder={placeholder} minLength={6} required className="pr-10 font-mono" />
+      <button
+        type="button"
+        onClick={() => setShow((current) => !current)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={show ? "Sembunyikan password" : "Lihat password"}
+        tabIndex={-1}
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
   );
 }
 

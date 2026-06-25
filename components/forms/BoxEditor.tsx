@@ -230,7 +230,7 @@ function BoxDeleteCard({ boxId, hasStock }: { boxId: string; hasStock: boolean }
         {hasStock ? (
           <div className="flex items-start gap-2 rounded-md border border-warning/20 bg-warning/15 p-3 text-sm text-warning-foreground">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Box masih berisi stok. Kosongkan jumlah produknya jadi 0 lalu simpan dulu sebelum bisa dihapus.</span>
+            <span>Box ini masih berisi stok. Menghapusnya akan ikut menghapus seluruh isi dan stoknya secara permanen.</span>
           </div>
         ) : null}
         {!state.ok && state.message ? (
@@ -245,7 +245,7 @@ function BoxDeleteCard({ boxId, hasStock }: { boxId: string; hasStock: boolean }
         ) : null}
         <Dialog>
           <DialogTrigger asChild>
-            <Button type="button" variant="destructive" disabled={hasStock || pending}>
+            <Button type="button" variant="destructive" disabled={pending}>
               <Trash2 className="h-4 w-4" />
               Hapus box permanen
             </Button>

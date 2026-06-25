@@ -1,12 +1,15 @@
-import { Activity, Database, ShieldCheck, UserCircle } from "lucide-react";
+import Link from "next/link";
+import { Activity, Database, ShieldCheck, UserCircle, X } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireRole } from "@/lib/auth/guards";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, roleLabel } from "@/lib/utils";
+import { isUuidValue } from "@/lib/validation/uuid";
 
 type ActivityLogRow = {
   id: string;
@@ -22,22 +25,33 @@ type ActivityLogRow = {
   metadata: Record<string, unknown> | null;
 };
 
-export default async function ActivityLogsPage() {
+export default async function ActivityLogsPage({ searchParams }: { searchParams: Promise<{ actor?: string }> }) {
   await requireRole(["super_admin"]);
+  const params = await searchParams;
+  const actorId = params.actor && isUuidValue(params.actor) ? params.actor : null;
   const supabase = await createClient();
-  const { data, error } = await supabase
+
+  let query = supabase
     .from("v_activity_logs")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(200);
+  if (actorId) query = query.eq("actor_user_id", actorId);
+  const { data, error } = await query;
 
   const rows = (data ?? []) as ActivityLogRow[];
+
+  let actorName: string | null = null;
+  if (actorId) {
+    const { data: actorProfile } = await supabase.from("profiles").select("full_name").eq("id", actorId).maybeSingle();
+    actorName = actorProfile?.full_name ?? rows[0]?.actor_name ?? null;
+  }
 
   return (
     <div className="app-page space-y-6">
       <PageHeader
-        kicker="Audit Trail"
-        title="Activity Log"
+        kicker="Jejak Audit"
+        title="Log Aktivitas"
         description="Riwayat aktivitas user, perubahan master data, scan, pergerakan stok, dan import."
         action={
           <div className="inline-flex items-center gap-2.5 rounded-md border bg-background/80 px-3.5 py-2.5 text-sm font-medium text-foreground shadow-soft">
@@ -51,6 +65,20 @@ export default async function ActivityLogsPage() {
           </div>
         }
       />
+
+      {actorId ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-primary/5 px-4 py-3 text-sm">
+          <span className="text-foreground">
+            Menampilkan aktivitas untuk: <span className="font-semibold">{actorName ?? "user terpilih"}</span>
+          </span>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/activity-logs">
+              <X className="h-4 w-4" />
+              Tampilkan semua
+            </Link>
+          </Button>
+        </div>
+      ) : null}
 
       {error ? (
         <Card>

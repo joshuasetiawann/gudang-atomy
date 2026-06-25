@@ -9,8 +9,8 @@ import { formatDateTime, jakartaTodayUtcRange } from "@/lib/utils";
 export default async function DashboardPage() {
   const supabase = await createClient();
   const todayRange = jakartaTodayUtcRange();
-  const in30Days = new Date();
-  in30Days.setDate(in30Days.getDate() + 30);
+  const inOneYear = new Date();
+  inOneYear.setFullYear(inOneYear.getFullYear() + 1);
 
   const [totalBoxes, active, empty, partial, taken, stock, expired, todayMovements, latest] = await Promise.all([
     supabase.from("boxes").select("id", { count: "exact", head: true }),
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     supabase.from("boxes").select("id", { count: "exact", head: true }).eq("status", "partial"),
     supabase.from("boxes").select("id", { count: "exact", head: true }).eq("status", "taken"),
     supabase.from("v_active_stock").select("qty_available"),
-    supabase.from("boxes").select("id", { count: "exact", head: true }).in("status", ["active", "partial"]).lte("expired_at", in30Days.toISOString().slice(0, 10)),
+    supabase.from("boxes").select("id", { count: "exact", head: true }).in("status", ["active", "partial"]).lte("expired_at", inOneYear.toISOString().slice(0, 10)),
     todayRange
       ? supabase.from("stock_movements").select("id", { count: "exact", head: true }).gte("created_at", todayRange.startIso).lte("created_at", todayRange.endIso)
       : supabase.from("stock_movements").select("id", { count: "exact", head: true }),
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
         <Metric title="Total box partial" value={partial.count ?? 0} icon={PackageOpen} tone="warning" />
         <Metric title="Total box taken" value={taken.count ?? 0} icon={Boxes} tone="muted" />
         <Metric title="Total stok tersedia" value={totalStock} icon={Archive} tone="success" />
-        <Metric title="Expired 30 hari" value={expired.count ?? 0} icon={CalendarClock} tone="warning" />
+        <Metric title="Mendekati expired (1 tahun)" value={expired.count ?? 0} icon={CalendarClock} tone="warning" />
         <Metric title="Transaksi hari ini" value={todayMovements.count ?? 0} icon={Activity} tone="primary" />
       </div>
 

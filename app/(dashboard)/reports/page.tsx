@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/utils";
 export default async function ReportsPage() {
   const supabase = await createClient();
   const expiryLimit = new Date();
-  expiryLimit.setDate(expiryLimit.getDate() + 30);
+  expiryLimit.setFullYear(expiryLimit.getFullYear() + 1);
   const [activeStock, perOwner, perProduct, expired] = await Promise.all([
     supabase.from("v_active_stock").select("*").order("expired_at", { ascending: true }).limit(50),
     supabase.from("v_active_stock").select("owner_name, qty_available"),
@@ -26,7 +26,7 @@ export default async function ReportsPage() {
 
   return (
     <div className="app-page space-y-6">
-      <PageHeader kicker="Analytics" title="Reports" description="Stok aktif, owner, produk, expired, dan export CSV." action={<ExportCsvButton />} />
+      <PageHeader kicker="Analitik" title="Laporan" description="Stok aktif, pemilik, produk, kedaluwarsa, dan ekspor CSV." action={<ExportCsvButton />} />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard title="Total stok tersedia" value={totalQty} icon={Layers} tone="primary" />
@@ -72,7 +72,7 @@ export default async function ReportsPage() {
               </TableBody>
             </Table>
           ) : (
-            <EmptyState title="Tidak ada box mendekati expired" description="Box dan produk yang mendekati tanggal expired dalam 30 hari akan muncul di sini." />
+            <EmptyState title="Tidak ada box mendekati expired" description="Box dan produk yang mendekati tanggal expired dalam 1 tahun akan muncul di sini." />
           )}
         </CardContent>
       </Card>

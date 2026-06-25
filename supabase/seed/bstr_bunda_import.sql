@@ -7,16 +7,18 @@
 -- Jalankan di Supabase SQL Editor (role postgres/service_role → bypass RLS).
 --
 -- Konvensi:
---   id_box / pemilik_id_box = kode BSTR (mis. BSTR-EOP-0001)
---   barcode_value           = public.build_box_barcode_value(id_box)  → ATMY_BOX:<kode>:<checksum>
+--   id_box         = kode BSTR (mis. BSTR-EOP-0001)
+--   pemilik_id_box = <owner_code>-<id_box>  (mis. OWN-000006-BSTR-EOP-0001) → mengandung ID owner
+--   barcode_value  = public.build_box_barcode_value(id_box)  → ATMY_BOX:<kode>:<checksum>
 --   source_type             = 'custom'  (1 box = 1 jenis barang)
 --   created_at              = kolom "Waktu" saat box disortir (WIB / +07)
 --
 -- CATATAN DATA (perlu konfirmasi Bunda):
 --   • BSTR-EOP-0005  -> HILANG. Urutan EOP loncat 0004 → 0006.
 --                       Template insert-nya ada di bagian paling bawah (di-comment).
---   • BSTR-HEMO-0009 -> DOBEL di data asli (baris 33 & 35, isinya sama persis).
---                       Diasumsikan kescan 2x → hanya dimasukkan 1x.
+--   • BSTR-HEMO-0009 -> DOBEL di data asli (baris 33 & 35, isinya sama persis). Kedua baris
+--                       dipertahankan, TAPI id_box wajib unik → DB hanya simpan 1 box
+--                       (baris ke-2 ditolak ON CONFLICT). Efektif 49 box di sistem.
 -- =====================================================================
 
 begin;
@@ -63,7 +65,8 @@ insert into _bstr_stg (id_box, sku, qty, expired_at, created_at) values
   ('BSTR-HEMO-0008', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:28+07'),
   ('BSTR-FZ-0005',   'ATM-FZ',   12, date '2027-12-01', timestamptz '2026-06-24 06:29+07'),
   ('BSTR-HSD-0011',  'ATM-HSD',   8, date '2027-11-01', timestamptz '2026-06-24 06:33+07'),
-  ('BSTR-HEMO-0009', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:36+07'),  -- baris 35 (dobel) dibuang
+  ('BSTR-HEMO-0009', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:36+07'),  -- baris 33
+  ('BSTR-HEMO-0009', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:46+07'),  -- baris 35 (kembar 0009 sesuai permintaan; ditolak ON CONFLICT krn id_box unik)
   ('BSTR-EOP-0007',  'ATM-EOP',   8, date '2029-01-18', timestamptz '2026-06-24 06:40+07'),
   ('BSTR-HEMO-0010', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:46+07'),
   ('BSTR-HEMO-0011', 'ATM-HEMO',  5, date '2027-10-10', timestamptz '2026-06-24 06:46+07'),
@@ -101,23 +104,24 @@ on conflict (sku) do nothing;
 -- ---- 3) Boxes --------------------------------------------------------
 insert into public.boxes (
   id_box, pemilik_id_box, barcode_value, box_name,
-  owner_id, source_type, package_qty, expired_at, status, created_at
+  owner_id, source_type, package_qty, expired_at, location_code, status, created_at
 )
 select
   s.id_box,
-  s.id_box,
+  o.owner_code || '-' || s.id_box,          -- pemilik_id_box = <owner_code>-<id_box>
   public.build_box_barcode_value(s.id_box),
   p.product_name,
   o.id,
   'custom',
   0,
   s.expired_at,
+  'GUDANG KAPUK',                           -- location_code: semua box di Gudang Kapuk
   'active',
   s.created_at
 from _bstr_stg s
 join public.products p on p.sku = s.sku
 cross join lateral (
-  select id from public.owners where lower(owner_name) = 'bunda' limit 1
+  select id, owner_code from public.owners where lower(owner_name) = 'bunda' limit 1
 ) o
 on conflict (id_box) do nothing;
 
@@ -152,12 +156,12 @@ commit;
 -- =====================================================================
 -- begin;
 --   insert into public.boxes (id_box, pemilik_id_box, barcode_value, box_name,
---     owner_id, source_type, package_qty, expired_at, status)
---   select 'BSTR-EOP-0005', 'BSTR-EOP-0005',
+--     owner_id, source_type, package_qty, expired_at, location_code, status)
+--   select 'BSTR-EOP-0005', o.owner_code || '-BSTR-EOP-0005',
 --          public.build_box_barcode_value('BSTR-EOP-0005'),
 --          'Atomy Ethereal Oil Patch',
---          (select id from public.owners where lower(owner_name)='bunda' limit 1),
---          'custom', 0, date '2029-01-18', 'active'
+--          o.id, 'custom', 0, date '2029-01-18', 'GUDANG KAPUK', 'active'
+--   from public.owners o where lower(o.owner_name)='bunda' limit 1
 --   on conflict (id_box) do nothing;
 --
 --   insert into public.box_items (box_id, product_id, qty_initial, qty_available, expired_at)

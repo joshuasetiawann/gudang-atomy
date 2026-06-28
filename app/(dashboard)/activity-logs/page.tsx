@@ -141,7 +141,7 @@ export default async function ActivityLogsPage({ searchParams }: { searchParams:
 function InfoCard({ icon: Icon, title, description }: { icon: typeof Activity; title: string; description: string }) {
   return (
     <Card>
-      <CardContent className="flex h-full gap-3.5 p-5">
+      <CardContent className="flex h-full items-center gap-3.5 p-5">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
           <Icon className="h-5 w-5" />
         </div>

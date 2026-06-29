@@ -38,6 +38,7 @@ export function ReceiveBoxForm({
   const [state, formAction, pending] = useActionState(receiveBoxAction, initialState);
   const [sourceType, setSourceType] = useState<"custom" | "package" | "mixed">("custom");
   const [ownerId, setOwnerId] = useState("");
+  const [boxName, setBoxName] = useState("");
   const [items, setItems] = useState<ManualItem[]>([{ product_id: "", qty: 1 }]);
   const ownerOptions = useMemo(
     () =>
@@ -57,12 +58,22 @@ export function ReceiveBoxForm({
       })),
     [products]
   );
+  const productNameOptions = useMemo(
+    () =>
+      products.map((product) => ({
+        value: product.product_name,
+        label: product.product_name,
+        description: product.sku || undefined
+      })),
+    [products]
+  );
   const itemsJson = useMemo(() => JSON.stringify(items.filter((item) => item.product_id && Number(item.qty) > 0)), [items]);
   const hasManualItem = items.some((item) => item.product_id && Number(item.qty) > 0);
   const needsPackage = sourceType !== "custom";
   const needsProductMaster = sourceType !== "package";
   const submitDisabled =
     pending ||
+    !boxName ||
     (needsPackage && packages.length === 0) ||
     (needsProductMaster && products.length === 0) ||
     (sourceType === "custom" && !hasManualItem);
@@ -78,7 +89,7 @@ export function ReceiveBoxForm({
       <Card>
         <CardHeader>
           <CardTitle>Data Box</CardTitle>
-          <CardDescription>Isi pemilik, label box, lokasi, dan tipe penerimaan barang.</CardDescription>
+          <CardDescription>Isi pemilik, ID box, nama produk, lokasi, dan tipe penerimaan barang.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -99,8 +110,28 @@ export function ReceiveBoxForm({
             <Input id="quick_owner_name" name="quick_owner_name" placeholder="Isi jika belum ada owner" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="box_name">Nama box</Label>
-            <Input id="box_name" name="box_name" required placeholder="Kotak Budi 001" />
+            <Label htmlFor="id_box">ID Box</Label>
+            <Input
+              id="id_box"
+              name="id_box"
+              required
+              placeholder="BSTR-HEMO-0045"
+              className="font-mono uppercase"
+              autoCapitalize="characters"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="box_name">Nama Produk</Label>
+            <SearchableSelect
+              id="box_name"
+              name="box_name"
+              value={boxName}
+              onValueChange={setBoxName}
+              options={productNameOptions}
+              placeholder="Pilih produk"
+              searchPlaceholder="Ketik nama produk..."
+              emptyText="Produk tidak ditemukan"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="expired_at">Expired date</Label>

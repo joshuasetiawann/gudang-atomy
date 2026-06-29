@@ -47,7 +47,13 @@ export const receiveBoxSchema = z
   .object({
     owner_id: optionalUuidSchema("Pemilik tidak valid. Pilih ulang pemilik."),
     quick_owner_name: z.string().trim().optional(),
-    box_name: z.string().trim().min(1, "Nama box wajib diisi"),
+    id_box: z
+      .string()
+      .trim()
+      .min(1, "ID Box wajib diisi")
+      .transform((value) => value.toUpperCase())
+      .refine((value) => /^[A-Z0-9][A-Z0-9-]{1,48}$/.test(value), "ID Box hanya boleh huruf/angka/strip, contoh: BSTR-HEMO-0045"),
+    box_name: z.string().trim().min(1, "Nama produk wajib dipilih"),
     expired_at: z.string().trim().optional(),
     location_code: z.string().trim().optional(),
     source_type: z.enum(["custom", "package", "mixed"]),

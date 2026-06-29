@@ -304,6 +304,7 @@ export async function receiveBoxAction(_state: ActionState, formData: FormData):
   const parsed = receiveBoxSchema.safeParse({
     owner_id: text(formData, "owner_id"),
     quick_owner_name: text(formData, "quick_owner_name"),
+    id_box: text(formData, "id_box"),
     box_name: text(formData, "box_name"),
     expired_at: text(formData, "expired_at"),
     location_code: text(formData, "location_code"),
@@ -374,9 +375,23 @@ export async function receiveBoxAction(_state: ActionState, formData: FormData):
   const boxItems = Array.from(merged.values()).filter((item) => item.qty > 0);
   if (!boxItems.length) return fail("Isi box belum ada.");
 
-  const { data: ids, error: idError } = await supabase.rpc("generate_box_identifiers", { p_owner_id: ownerId });
-  if (idError || !ids?.length) return fail(errorMessage(idError, "Gagal generate ID box."));
-  const identifiers = ids[0] as { id_box: string; pemilik_id_box: string; barcode_value: string };
+  // ID Box diketik manual (pola sama dengan data SQL inject); pemilik_id_box & barcode diturunkan dari kode tsb.
+  const idBox = parsed.data.id_box;
+  const { data: ownerRow, error: ownerCodeError } = await supabase.from("owners").select("owner_code").eq("id", ownerId).single();
+  if (ownerCodeError || !ownerRow) return fail(errorMessage(ownerCodeError, "Owner tidak ditemukan."));
+
+  const { count: existingCount, error: dupError } = await supabase
+    .from("boxes")
+    .select("id", { count: "exact", head: true })
+    .eq("id_box", idBox);
+  if (dupError) return fail(errorMessage(dupError, "Gagal cek ID Box."));
+  if (existingCount && existingCount > 0) return fail(`ID Box "${idBox}" sudah dipakai. Gunakan kode lain.`);
+
+  const identifiers = {
+    id_box: idBox,
+    pemilik_id_box: `${ownerRow.owner_code}-${idBox}`,
+    barcode_value: buildBarcodeValue(idBox)
+  };
 
   const { data: box, error: boxError } = await supabase
     .from("boxes")

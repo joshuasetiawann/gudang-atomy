@@ -115,7 +115,7 @@ export function ReceiveBoxForm({
               id="id_box"
               name="id_box"
               required
-              placeholder="BSTR-HEMO-0045"
+              placeholder="Masukkan ID_Box"
               className="font-mono uppercase"
               autoCapitalize="characters"
             />

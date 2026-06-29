@@ -24,7 +24,7 @@ export function BoxLabel({ box }: { box: LabelBox }) {
         <h2 className="text-center text-xl font-bold tracking-normal">Gudang Atomy</h2>
         <div className="mx-auto mt-2 h-px w-16 bg-slate-200" />
         <div className="mt-4 grid gap-2 text-sm">
-          <Row label="Label Client" value={box.box_name} />
+          <Row label="Produk" value={box.box_name} />
           <Row label="ID Box App" value={box.id_box} mono />
           <Row label="Pemilik" value={box.owners?.owner_name ?? "-"} />
           <Row label="Pemilik ID Box" value={box.pemilik_id_box} mono />

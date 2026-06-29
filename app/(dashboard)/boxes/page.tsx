@@ -49,9 +49,9 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
         <CardContent className="p-4">
           <form className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr_160px_auto]">
             <div className="relative">
-              <label htmlFor="filter-q" className="sr-only">Cari ID box atau label client</label>
+              <label htmlFor="filter-q" className="sr-only">Cari ID box atau produk</label>
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-              <Input id="filter-q" name="q" placeholder="Cari ID box / label client" defaultValue={params.q ?? ""} className="pl-9" />
+              <Input id="filter-q" name="q" placeholder="Cari ID box / produk" defaultValue={params.q ?? ""} className="pl-9" />
             </div>
             <div>
               <label htmlFor="filter-owner" className="sr-only">Owner</label>
@@ -91,7 +91,7 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
           <TableHeader>
             <TableRow>
               <TableHead>ID Box App</TableHead>
-              <TableHead>Label Client</TableHead>
+              <TableHead>Produk</TableHead>
               <TableHead>Owner</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Expired</TableHead>

@@ -264,7 +264,7 @@ function ResiLabelCard({
         <h2 className="mt-1 text-center text-lg font-bold tracking-normal print:text-base">Gudang Atomy</h2>
 
         <div className="mt-3 grid gap-1.5 text-[13px] print:gap-1 print:text-xs">
-          <Row label="Label Client" value={label.box_name} />
+          <Row label="Produk" value={label.box_name} />
           <Row label="ID Box App" value={label.id_box} mono />
           <Row label="Pemilik" value={label.owner_name ?? "-"} />
           <Row label="Pemilik ID Box" value={label.pemilik_id_box} mono />
@@ -305,7 +305,7 @@ function ResiLabelCard({
 
       <div className="print-compact-label">
         <div>
-          <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Label Client</p>
+          <p className="text-[9px] font-bold uppercase tracking-wide text-slate-500">Produk</p>
           <p className="print-compact-client mt-1 text-center text-[15px] font-bold leading-snug text-slate-950">{label.box_name}</p>
         </div>
         <QrCodeImage value={label.barcode_value} className="print-compact-barcode mx-auto h-24 w-24" size={240} />

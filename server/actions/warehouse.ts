@@ -453,6 +453,32 @@ export async function receiveBoxAction(_state: ActionState, formData: FormData):
   redirect(`/barang-masuk/success/${box.id}`);
 }
 
+export async function markBoxesPrintedAction(boxIds: string[]): Promise<ActionState> {
+  await requireRole(["super_admin", "admin_gudang"]);
+  const supabase = await createClient();
+  const ids = Array.from(new Set((boxIds ?? []).filter((id) => isUuidValue(id))));
+  if (!ids.length) return fail("Tidak ada label valid untuk ditandai.");
+  const { error } = await supabase.from("boxes").update({ printed_at: new Date().toISOString() }).in("id", ids);
+  if (error) return fail(errorMessage(error, "Gagal menandai sudah diprint."));
+  revalidatePath("/print-resi");
+  revalidatePath("/products");
+  return ok(`${ids.length} label ditandai sudah diprint.`);
+}
+
+export async function setBoxPrintedAction(boxId: string, printed: boolean): Promise<ActionState> {
+  await requireRole(["super_admin", "admin_gudang"]);
+  const supabase = await createClient();
+  if (!isUuidValue(boxId)) return fail("ID box tidak valid.");
+  const { error } = await supabase
+    .from("boxes")
+    .update({ printed_at: printed ? new Date().toISOString() : null })
+    .eq("id", boxId);
+  if (error) return fail(errorMessage(error, "Gagal mengubah status print."));
+  revalidatePath("/print-resi");
+  revalidatePath("/products");
+  return ok(printed ? "Ditandai sudah diprint." : "Ditandai belum diprint.");
+}
+
 export async function lookupBoxByBarcodeAction(barcodeValue: string): Promise<ActionState> {
   await requireRole(["super_admin", "admin_gudang"]);
   const supabase = await createClient();

@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { CheckSquare, Filter, Printer, RotateCcw, Search, Square } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { BadgeCheck, CheckSquare, Circle, Filter, Printer, RotateCcw, Search, Square } from "lucide-react";
 import { QrCodeImage } from "@/components/labels/QrCodeImage";
+import { markBoxesPrintedAction, setBoxPrintedAction } from "@/server/actions/warehouse";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,8 @@ export type PrintResiLabel = {
   expired_at: string | null;
   location_code: string | null;
   status: BoxStatus;
+  created_at: string | null;
+  printed_at: string | null;
   owner_code: string | null;
   owner_name: string | null;
   items: PrintResiItem[];
@@ -47,11 +51,21 @@ export function PrintResiClient({
   labels: PrintResiLabel[];
   productOptions: PrintResiProductOption[];
 }) {
+  const router = useRouter();
+  const [, startTransition] = useTransition();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("ready");
   const [productId, setProductId] = useState("");
+  const [printFilter, setPrintFilter] = useState("all"); // all | printed | unprinted
+  const [sortBy, setSortBy] = useState("masuk_baru"); // masuk_baru | masuk_lama | exp_dekat | exp_jauh
+  // Override status print lokal (optimistic). Untuk id yang tidak ada di sini, pakai nilai dari server.
+  const [printedOverride, setPrintedOverride] = useState<Record<string, string | null>>({});
   // Simpan ID yang TIDAK dipilih. Dengan begitu label baru (hasil filter) otomatis ikut tercetak.
   const [excludedIds, setExcludedIds] = useState<Set<string>>(() => new Set());
+
+  const printedAtOf = (label: PrintResiLabel) =>
+    label.id in printedOverride ? printedOverride[label.id] : label.printed_at;
+  const isPrinted = (label: PrintResiLabel) => Boolean(printedAtOf(label));
 
   const filteredLabels = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -60,6 +74,8 @@ export function PrintResiClient({
         status === "all" ||
         (status === "ready" ? label.status === "active" || label.status === "partial" || label.status === "empty" : label.status === status);
       const productMatch = !productId || label.items.some((item) => item.product_id === productId);
+      const printed = label.id in printedOverride ? Boolean(printedOverride[label.id]) : Boolean(label.printed_at);
+      const printMatch = printFilter === "all" || (printFilter === "printed" ? printed : !printed);
       const searchMatch =
         !needle ||
         [
@@ -76,9 +92,34 @@ export function PrintResiClient({
           .toLowerCase()
           .includes(needle);
 
-      return statusMatch && productMatch && searchMatch;
+      return statusMatch && productMatch && searchMatch && printMatch;
     });
-  }, [labels, productId, search, status]);
+  }, [labels, productId, search, status, printFilter, printedOverride]);
+
+  const sortedLabels = useMemo(() => {
+    const time = (value: string | null) => (value ? Date.parse(value) : null);
+    const ascNullsLast = (a: number | null, b: number | null) =>
+      a === null ? 1 : b === null ? -1 : a - b;
+    const arr = [...filteredLabels];
+    arr.sort((left, right) => {
+      const lc = time(left.created_at);
+      const rc = time(right.created_at);
+      const le = time(left.expired_at);
+      const re = time(right.expired_at);
+      switch (sortBy) {
+        case "masuk_lama":
+          return ascNullsLast(lc, rc);
+        case "exp_dekat":
+          return ascNullsLast(le, re);
+        case "exp_jauh":
+          return ascNullsLast(re, le);
+        case "masuk_baru":
+        default:
+          return ascNullsLast(rc, lc);
+      }
+    });
+    return arr;
+  }, [filteredLabels, sortBy]);
 
   const selectedLabels = useMemo(
     () => filteredLabels.filter((label) => !excludedIds.has(label.id)),
@@ -109,17 +150,41 @@ export function PrintResiClient({
     setSearch("");
     setStatus("ready");
     setProductId("");
+    setPrintFilter("all");
+    setSortBy("masuk_baru");
     setExcludedIds(new Set());
   }
 
+  function togglePrinted(label: PrintResiLabel) {
+    const nextPrinted = !isPrinted(label);
+    setPrintedOverride((current) => ({ ...current, [label.id]: nextPrinted ? new Date().toISOString() : null }));
+    startTransition(async () => {
+      await setBoxPrintedAction(label.id, nextPrinted);
+      router.refresh();
+    });
+  }
+
   function printLabels() {
+    const ids = selectedLabels.map((label) => label.id);
+    if (ids.length) {
+      const now = new Date().toISOString();
+      setPrintedOverride((current) => {
+        const next = { ...current };
+        ids.forEach((id) => (next[id] = now));
+        return next;
+      });
+      startTransition(async () => {
+        await markBoxesPrintedAction(ids);
+        router.refresh();
+      });
+    }
     window.print();
   }
 
   return (
     <div className="space-y-5">
       <div className="no-print surface-panel rounded-lg border p-4">
-        <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_190px_minmax(220px,300px)]">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <label className="space-y-2">
             <span className="text-xs font-semibold uppercase text-muted-foreground">Cari label</span>
             <div className="relative">
@@ -147,6 +212,31 @@ export function PrintResiClient({
               <option value="empty">Kosong</option>
               <option value="taken">Diambil</option>
               <option value="void">Batal</option>
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold uppercase text-muted-foreground">Status print</span>
+            <select
+              value={printFilter}
+              onChange={(event) => setPrintFilter(event.target.value)}
+              className="h-10 w-full rounded-md border bg-card px-3 text-sm shadow-soft outline-none transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">Semua</option>
+              <option value="unprinted">Belum diprint</option>
+              <option value="printed">Sudah diprint</option>
+            </select>
+          </label>
+          <label className="space-y-2">
+            <span className="text-xs font-semibold uppercase text-muted-foreground">Urutkan</span>
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value)}
+              className="h-10 w-full rounded-md border bg-card px-3 text-sm shadow-soft outline-none transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-ring"
+            >
+              <option value="masuk_baru">Masuk terbaru</option>
+              <option value="masuk_lama">Masuk terlama</option>
+              <option value="exp_dekat">Expired terdekat</option>
+              <option value="exp_jauh">Expired terjauh</option>
             </select>
           </label>
           <label className="space-y-2">
@@ -212,14 +302,17 @@ export function PrintResiClient({
         </div>
       </div>
 
-      {filteredLabels.length ? (
+      {sortedLabels.length ? (
         <div className="print-label-sheet grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredLabels.map((label) => (
+          {sortedLabels.map((label) => (
             <ResiLabelCard
               key={label.id}
               label={label}
               selected={!excludedIds.has(label.id)}
               onToggle={() => toggleLabel(label.id)}
+              printed={isPrinted(label)}
+              printedAt={printedAtOf(label)}
+              onTogglePrinted={() => togglePrinted(label)}
             />
           ))}
         </div>
@@ -235,11 +328,17 @@ export function PrintResiClient({
 function ResiLabelCard({
   label,
   selected,
-  onToggle
+  onToggle,
+  printed,
+  printedAt,
+  onTogglePrinted
 }: {
   label: PrintResiLabel;
   selected: boolean;
   onToggle: () => void;
+  printed: boolean;
+  printedAt: string | null;
+  onTogglePrinted: () => void;
 }) {
   const visibleItems = label.items.slice(0, 4);
   const hiddenItemCount = Math.max(label.items.length - visibleItems.length, 0);
@@ -300,6 +399,27 @@ function ResiLabelCard({
         <div className="mt-auto pt-3">
           <QrCodeImage value={label.barcode_value} className="mx-auto h-36 w-36" size={260} />
           <p className="mt-1 break-all text-center font-mono text-[10px] leading-tight tracking-tight">{label.id_box}</p>
+        </div>
+
+        <div className="no-print mt-3 flex items-center justify-between gap-2 border-t border-slate-200 pt-2">
+          {printed ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+              <BadgeCheck className="h-3.5 w-3.5" />
+              Sudah diprint{printedAt ? ` · ${formatDate(printedAt)}` : ""}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400">
+              <Circle className="h-3.5 w-3.5" />
+              Belum diprint
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={onTogglePrinted}
+            className="shrink-0 rounded-md border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            {printed ? "Tandai belum" : "Tandai sudah"}
+          </button>
         </div>
       </div>
 

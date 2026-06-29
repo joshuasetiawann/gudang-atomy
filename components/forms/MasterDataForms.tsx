@@ -124,7 +124,18 @@ function OwnerRow({ owner, canEdit, canDelete }: { owner: Owner; canEdit: boolea
   );
 }
 
-export function ProductManager({ products, canEdit }: { products: Product[]; canEdit: boolean }) {
+export type ProductPrintSummary = { printed: number; unprinted: number };
+export type ProductPrintSummaryMap = Record<string, ProductPrintSummary>;
+
+export function ProductManager({
+  products,
+  canEdit,
+  printSummary = {}
+}: {
+  products: Product[];
+  canEdit: boolean;
+  printSummary?: ProductPrintSummaryMap;
+}) {
   const [state, formAction, pending] = useActionState(createProductAction, initialState);
 
   return (
@@ -157,27 +168,48 @@ export function ProductManager({ products, canEdit }: { products: Product[]; can
       ) : null}
 
       <div className="grid gap-3">
-        {products.length ? products.map((product) => <ProductRow key={product.id} product={product} canEdit={canEdit} />) : <EmptyState title="Belum ada produk" description="Tambahkan master produk sebelum membuat box." />}
+        {products.length ? products.map((product) => <ProductRow key={product.id} product={product} canEdit={canEdit} summary={printSummary[product.id]} />) : <EmptyState title="Belum ada produk" description="Tambahkan master produk sebelum membuat box." />}
       </div>
     </div>
   );
 }
 
-function ProductRow({ product, canEdit }: { product: Product; canEdit: boolean }) {
+function ProductPrintSummaryBadge({ summary }: { summary?: ProductPrintSummary }) {
+  if (!summary || summary.printed + summary.unprinted === 0) return null;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1.5 text-xs">
+      <span className="inline-flex items-center gap-1 rounded-md bg-success/10 px-2 py-0.5 font-medium text-success">
+        Diprint <span className="tabular-nums">{summary.printed}</span>
+      </span>
+      <span className="inline-flex items-center gap-1 rounded-md bg-warning/10 px-2 py-0.5 font-medium text-warning">
+        Belum <span className="tabular-nums">{summary.unprinted}</span>
+      </span>
+    </span>
+  );
+}
+
+function ProductRow({ product, canEdit, summary }: { product: Product; canEdit: boolean; summary?: ProductPrintSummary }) {
   const [state, formAction, pending] = useActionState(updateProductAction, initialState);
   if (!canEdit) {
     return (
       <Card>
-        <CardContent className="p-4 sm:p-5">
+        <CardContent className="space-y-2 p-4 sm:p-5">
           <p className="font-medium">{product.product_name}</p>
           <p className="font-mono text-sm text-muted-foreground">{product.sku ?? "-"}</p>
+          <ProductPrintSummaryBadge summary={summary} />
         </CardContent>
       </Card>
     );
   }
   return (
     <Card>
-      <CardContent className="p-4 sm:p-5">
+      <CardContent className="space-y-3 p-4 sm:p-5">
+        {summary && summary.printed + summary.unprinted > 0 ? (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status print label</span>
+            <ProductPrintSummaryBadge summary={summary} />
+          </div>
+        ) : null}
         <form action={formAction} className="grid items-center gap-3 md:grid-cols-[150px_minmax(220px,1.4fr)_170px_100px_minmax(180px,1fr)_80px_auto]">
           <input type="hidden" name="id" value={product.id} />
           <Input name="sku" defaultValue={product.sku ?? ""} className="font-mono" />

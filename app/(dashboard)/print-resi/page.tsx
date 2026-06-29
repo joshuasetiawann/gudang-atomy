@@ -33,6 +33,8 @@ type RawBox = {
   expired_at: string | null;
   location_code: string | null;
   status: string;
+  created_at: string | null;
+  printed_at: string | null;
   owners: RawOwner | RawOwner[] | null;
   box_items: RawBoxItem[] | null;
 };
@@ -42,7 +44,7 @@ export default async function PrintResiPage() {
   const { data, error } = await supabase
     .from("boxes")
     .select(
-      "id, box_name, id_box, pemilik_id_box, barcode_value, expired_at, location_code, status, owners(owner_code, owner_name), box_items(product_id, qty_initial, qty_available, expired_at, products(id, sku, product_name, unit))"
+      "id, box_name, id_box, pemilik_id_box, barcode_value, expired_at, location_code, status, created_at, printed_at, owners(owner_code, owner_name), box_items(product_id, qty_initial, qty_available, expired_at, products(id, sku, product_name, unit))"
     )
     .order("created_at", { ascending: false })
     .range(0, 1999);
@@ -89,6 +91,8 @@ function normalizeLabels(rows: RawBox[]): PrintResiLabel[] {
       expired_at: box.expired_at,
       location_code: box.location_code,
       status: box.status as BoxStatus,
+      created_at: box.created_at,
+      printed_at: box.printed_at,
       owner_code: owner?.owner_code ?? null,
       owner_name: owner?.owner_name ?? null,
       items: (box.box_items ?? []).map((item) => {

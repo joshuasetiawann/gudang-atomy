@@ -453,16 +453,19 @@ export async function receiveBoxAction(_state: ActionState, formData: FormData):
   redirect(`/barang-masuk/success/${box.id}`);
 }
 
-export async function markBoxesPrintedAction(boxIds: string[]): Promise<ActionState> {
+export async function markBoxesPrintedAction(boxIds: string[], printed = true): Promise<ActionState> {
   await requireRole(["super_admin", "admin_gudang"]);
   const supabase = await createClient();
   const ids = Array.from(new Set((boxIds ?? []).filter((id) => isUuidValue(id))));
   if (!ids.length) return fail("Tidak ada label valid untuk ditandai.");
-  const { error } = await supabase.from("boxes").update({ printed_at: new Date().toISOString() }).in("id", ids);
-  if (error) return fail(errorMessage(error, "Gagal menandai sudah diprint."));
+  const { error } = await supabase
+    .from("boxes")
+    .update({ printed_at: printed ? new Date().toISOString() : null })
+    .in("id", ids);
+  if (error) return fail(errorMessage(error, printed ? "Gagal menandai sudah diprint." : "Gagal mereset tanda print."));
   revalidatePath("/print-resi");
   revalidatePath("/products");
-  return ok(`${ids.length} label ditandai sudah diprint.`);
+  return ok(printed ? `${ids.length} label ditandai sudah diprint.` : `${ids.length} tanda print direset (belum diprint).`);
 }
 
 export async function setBoxPrintedAction(boxId: string, printed: boolean): Promise<ActionState> {

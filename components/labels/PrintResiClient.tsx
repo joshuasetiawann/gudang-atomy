@@ -146,13 +146,19 @@ export function PrintResiClient({
     setExcludedIds(new Set(filteredLabels.map((label) => label.id)));
   }
 
-  function resetFilters() {
-    setSearch("");
-    setStatus("ready");
-    setProductId("");
-    setPrintFilter("all");
-    setSortBy("masuk_baru");
-    setExcludedIds(new Set());
+  function bulkSetPrinted(printed: boolean) {
+    const ids = selectedLabels.map((label) => label.id);
+    if (!ids.length) return;
+    const value = printed ? new Date().toISOString() : null;
+    setPrintedOverride((current) => {
+      const next = { ...current };
+      ids.forEach((id) => (next[id] = value));
+      return next;
+    });
+    startTransition(async () => {
+      await markBoxesPrintedAction(ids, printed);
+      router.refresh();
+    });
   }
 
   function togglePrinted(label: PrintResiLabel) {
@@ -273,26 +279,28 @@ export function PrintResiClient({
             >
               {canPrint ? <span className="h-1.5 w-1.5 rounded-full bg-success" /> : null}
               <span>
-                Dipilih cetak <span className="font-mono font-semibold tabular-nums">{selectedCount}</span>/
+                Terpilih <span className="font-mono font-semibold tabular-nums">{selectedCount}</span>/
                 <span className="font-mono tabular-nums">{filteredLabels.length}</span>
               </span>
             </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={allSelected ? clearSelection : selectAll}
-              disabled={filteredLabels.length === 0}
-            >
-              {allSelected ? <Square className="h-4 w-4" /> : <CheckSquare className="h-4 w-4" />}
-              {allSelected ? "Kosongkan" : "Pilih semua"}
+            <Button type="button" variant="outline" size="sm" onClick={selectAll} disabled={filteredLabels.length === 0 || allSelected}>
+              <CheckSquare className="h-4 w-4" />
+              Pilih semua
             </Button>
-            <Button type="button" variant="outline" size="sm" onClick={resetFilters}>
+            <Button type="button" variant="outline" size="sm" onClick={clearSelection} disabled={selectedCount === 0}>
+              <Square className="h-4 w-4" />
+              Batal pilih
+            </Button>
+            <Button type="button" variant="outline" size="sm" disabled={!canPrint} onClick={() => bulkSetPrinted(true)}>
+              <BadgeCheck className="h-4 w-4" />
+              Tandai sudah diprint {selectedCount > 0 ? `(${selectedCount})` : ""}
+            </Button>
+            <Button type="button" variant="outline" size="sm" disabled={!canPrint} onClick={() => bulkSetPrinted(false)}>
               <RotateCcw className="h-4 w-4" />
-              Reset
+              Reset {selectedCount > 0 ? `(${selectedCount})` : ""}
             </Button>
             <Button type="button" size="sm" className="col-span-2 sm:col-span-1" disabled={!canPrint} onClick={printLabels}>
               <Printer className="h-4 w-4" />

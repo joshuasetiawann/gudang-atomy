@@ -168,7 +168,7 @@ function ProductRow({ product, canEdit }: { product: Product; canEdit: boolean }
   if (!canEdit) {
     return (
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-4 sm:p-5">
           <p className="font-medium">{product.product_name}</p>
           <p className="font-mono text-sm text-muted-foreground">{product.sku ?? "-"}</p>
         </CardContent>
@@ -177,7 +177,7 @@ function ProductRow({ product, canEdit }: { product: Product; canEdit: boolean }
   }
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="p-4 sm:p-5">
         <form action={formAction} className="grid items-center gap-3 md:grid-cols-[150px_minmax(220px,1.4fr)_170px_100px_minmax(180px,1fr)_80px_auto]">
           <input type="hidden" name="id" value={product.id} />
           <Input name="sku" defaultValue={product.sku ?? ""} className="font-mono" />
